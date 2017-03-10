@@ -5,10 +5,25 @@ PROJECT(Enchiladas)
 SET(CMAKE_CXX_STANDARD 11)
 
 ADD_SUBDIRECTORY("resources/pbnj")
-INCLUDE_DIRECTORIES(include)
+
+ADD_SUBDIRECTORY("resources/pistache")
+
+ADD_SUBDIRECTORY("resources/lodepng")
+
+INCLUDE_DIRECTORIES(include "resources/pistache/include/" "resources/lodepng/")
 
 FILE(GLOB SOURCES "src/*.cpp")
 
-ADD_EXECUTABLE(enchiladas ${SOURCES})
+ADD_EXECUTABLE(server ${SOURCES})
 
-TARGET_LINK_LIBRARIES(enchiladas pbnj) 
+TARGET_LINK_LIBRARIES(server pbnj net "${CMAKE_CURRENT_LIST_DIR}/resources/lodepng/build/liblodepng.a") 
+
+# Copy the index.html code whenever enchiladas gets built
+ADD_CUSTOM_COMMAND(TARGET server PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+    ${CMAKE_SOURCE_DIR}/src/index.html ${CMAKE_CURRENT_BINARY_DIR}/index.html)
+
+# Copy the js directory whenever enchiladas gets built
+ADD_CUSTOM_COMMAND(TARGET server PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/src/js ${CMAKE_CURRENT_BINARY_DIR}/js)
