@@ -114,8 +114,8 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     }
     else
     {
-        renderer->cameraWidth = camera->imageWidth = 250;
-        renderer->cameraHeight = camera->imageHeight = 250;
+        renderer->cameraWidth = camera->imageWidth = config->imageWidth;
+        renderer->cameraHeight = camera->imageHeight = config->imageHeight;
     }
 
     camera->setPosition(camera_x, camera_y, camera_z);
