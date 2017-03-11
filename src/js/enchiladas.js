@@ -8,7 +8,7 @@ $(document).ready(function(){
     camera.setBounds(width, height);
     camera.up = $V([0, 1, 0, 1.0]);
     camera.position = $V([0, 0, 512, 1.0]);
-    camera.zoomScale = 1.0;
+    camera.zoomScale = camera.position.elements[2];
 
     var is_drag = false;
 
@@ -40,9 +40,9 @@ $(document).ready(function(){
         var y = new_camera_position.elements[1].toFixed(3);
         var z = new_camera_position.elements[2].toFixed(3);
 
-        var upx = new_camera_up.elements[0].toString();
-        var upy = new_camera_up.elements[1].toString();
-        var upz = new_camera_up.elements[2].toString();
+        var upx = new_camera_up.elements[0].toFixed(3);
+        var upy = new_camera_up.elements[1].toFixed(3);
+        var upz = new_camera_up.elements[2].toFixed(3);
         
         img_tag.attr("src", "/image/" + x + "/" + y + "/" + z 
                 + "/" + upx + "/" + upy + "/" + upz + "/" 
