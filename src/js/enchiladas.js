@@ -95,7 +95,7 @@ $(document).ready(function(){
         clearTimeout($.data(this, 'timer'));
         $.data(this, 'timer', setTimeout(function() {
             render(0);
-        }, 250));
+        }, 1000));
         return false;
     });
 
