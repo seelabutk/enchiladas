@@ -2,10 +2,12 @@ $(document).ready(function(){
     width = 512;
     height = 512;
 
+    canceler = 0;
+
     camera = new ArcBall();
     camera.setBounds(width, height);
     camera.up = $V([0, 1, 0, 1.0]);
-    camera.position = $V([0, 0, 1024, 1.0]);
+    camera.position = $V([0, 0, 512, 1.0]);
     camera.zoomScale = 1.0;
 
     var is_drag = false;
@@ -34,9 +36,9 @@ $(document).ready(function(){
         var new_camera_position = m.multiply(camera.position);
         var new_camera_up = m.multiply(camera.up);
         
-        var x = new_camera_position.elements[0].toFixed().toString();
-        var y = new_camera_position.elements[1].toFixed().toString();
-        var z = new_camera_position.elements[2].toFixed().toString();
+        var x = new_camera_position.elements[0].toFixed(3);
+        var y = new_camera_position.elements[1].toFixed(3);
+        var z = new_camera_position.elements[2].toFixed(3);
 
         var upx = new_camera_up.elements[0].toString();
         var upy = new_camera_up.elements[1].toString();
@@ -70,7 +72,9 @@ $(document).ready(function(){
     });
 
     img_tag.on("mousemove", function(){
-        rotate(1); // Render low quality version
+        canceler = (canceler + 1) % 1000;
+        if (canceler % 5 == 0)
+            rotate(1); // Render low quality version
     });
 
     img_tag.on("mouseup", function(event){
@@ -94,4 +98,8 @@ $(document).ready(function(){
         }, 250));
         return false;
     });
+
+    // First render
+    img_tag.mousedown();
+    img_tag.mouseup();
 });         
