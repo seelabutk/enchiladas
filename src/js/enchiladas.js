@@ -49,13 +49,11 @@ $(document).ready(function(){
                 + lowquality.toString());
     }
 
-    function rotate(lowquality)
+    function rotate(mouse_x, mouse_y, lowquality)
     {
         if (is_drag)
         {
             is_drag = false;
-            var mouse_x = event.clientX - img_tag_x;
-            var mouse_y = event.clientY - img_tag_y;
             camera.move(mouse_x, mouse_y);
             render(lowquality);
             is_drag = true;
@@ -74,11 +72,18 @@ $(document).ready(function(){
     img_tag.on("mousemove", function(){
         canceler = (canceler + 1) % 1000;
         if (canceler % 5 == 0)
-            rotate(1); // Render low quality version
+        {
+            var mouse_x = event.clientX - img_tag_x;
+            var mouse_y = event.clientY - img_tag_y;
+            rotate(mouse_x, mouse_y, 1); // Render low quality version
+        }
     });
 
     img_tag.on("mouseup", function(event){
-        rotate(0); // Render high quality version
+        var mouse_x = event.clientX - img_tag_x;
+        var mouse_y = event.clientY - img_tag_y;
+
+        rotate(mouse_x, mouse_y, 0); // Render high quality version
         is_drag = false;
         return false;
     });
@@ -98,6 +103,39 @@ $(document).ready(function(){
         }, 1000));
         return false;
     });
+
+    img_tag.on("touchstart", function(event){
+        is_drag = true;
+
+        //update the base rotation so model doesn't jerk around upon new clicks
+        camera.LastRot = camera.ThisRot;
+
+        //tell the camera where the touch event happened
+        camera.click(event.originalEvent.touches[0].clientX - img_tag_x, event.originalEvent.touches[0].clientY - img_tag_y);
+
+        return false;
+    });
+
+    //handle touchEnd
+    img_tag.on("touchend", function(event){
+        is_drag = false;
+
+        render(0);
+        return false;
+    });
+
+    //handle touch movement
+    img_tag.on("touchmove", function(event){
+        if (is_drag == true)
+        {
+            mouse_x = event.originalEvent.touches[0].clientX - img_tag_x;
+            mouse_y = event.originalEvent.touches[0].clientY - img_tag_y;
+
+            rotate(mouse_x, mouse_y, 1); // Render low quality version
+        }
+        return false;
+    });
+
 
     // First render
     img_tag.mousedown();
