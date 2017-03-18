@@ -10,11 +10,6 @@
 #include "TransferFunction.h"
 #include "Volume.h"
 
-// Pistache headers
-
-// Lodepng headers
-#include "lodepng.h"
-
 #include <iostream>
 #include <cstdlib>
 
@@ -37,7 +32,7 @@ int main(int argc, const char **argv)
 
     pbnj::pbnjInit(&argc, argv);
 
-    pbnj::Volume *volume = new pbnj::Volume(config->dataFilename, 
+    pbnj::Volume *volume = new pbnj::Volume(config->dataFilename, config->dataVariable,
             config->dataXDim, config->dataYDim, config->dataZDim);
 
     volume->setColorMap(config->colorMap);
