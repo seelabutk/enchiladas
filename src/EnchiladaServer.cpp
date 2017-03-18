@@ -13,8 +13,6 @@
 #include "Configuration.h"
 #include "Renderer.h"
 
-#include "lodepng.h"
-
 namespace ench {
 
 using namespace Net;
@@ -103,9 +101,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         lowquality = request.param(":lowquality").as<int>();
     }
 
-    unsigned char *image;
     std::vector<unsigned char> png;
-    int width, height;
 
     if (lowquality)
     {
@@ -121,14 +117,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     camera->setPosition(camera_x, camera_y, camera_z);
     camera->setUpVector(up_x, up_y, up_z);
 
-    renderer->renderToBuffer(&image, width, height);
-
-    std::vector<unsigned char> image_vector(image, image + 4 * width * height);
-
-    unsigned int error = lodepng::encode(png, image_vector, width, height);
-    if (error) 
-        std::cout << "encoder error " << error << ": " <<
-            lodepng_error_text(error) << std::endl;
+    renderer->renderToPNGObject(png);
 
     std::string png_data(png.begin(), png.end());
     auto mime = Http::Mime::MediaType::fromString("image/png");

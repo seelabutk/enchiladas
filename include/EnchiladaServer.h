@@ -12,8 +12,6 @@
 #include "router.h"
 #include "endpoint.h"
 
-#include "lodepng.h"
-
 namespace ench {
 
     using namespace Net;
