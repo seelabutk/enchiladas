@@ -8,15 +8,13 @@ ADD_SUBDIRECTORY("resources/pbnj")
 
 ADD_SUBDIRECTORY("resources/pistache")
 
-ADD_SUBDIRECTORY("resources/lodepng")
-
-INCLUDE_DIRECTORIES(include "resources/pistache/include/" "resources/lodepng/")
+INCLUDE_DIRECTORIES(include "resources/pistache/include/")
 
 FILE(GLOB SOURCES "src/*.cpp")
 
 ADD_EXECUTABLE(server ${SOURCES})
 
-TARGET_LINK_LIBRARIES(server pbnj net "${CMAKE_CURRENT_LIST_DIR}/resources/lodepng/build/liblodepng.a") 
+TARGET_LINK_LIBRARIES(server pbnj net) 
 
 # Copy the index.html code whenever enchiladas gets built
 ADD_CUSTOM_COMMAND(TARGET server PRE_BUILD
