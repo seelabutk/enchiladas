@@ -3,6 +3,8 @@ $(document).ready(function(){
     height = 512;
 
     canceler = 0;
+    cached_images = [];
+    MAX_CACHE_LENGTH = 512;
 
     camera = new ArcBall();
     camera.setBounds(width, height);
@@ -59,9 +61,22 @@ $(document).ready(function(){
         var upy = new_camera_up.elements[1].toFixed(3);
         var upz = new_camera_up.elements[2].toFixed(3);
         
-        img_tag.attr("src", "/image/" + x + "/" + y + "/" + z 
-                + "/" + upx + "/" + upy + "/" + upz + "/" 
-                + lowquality.toString());
+        var path = "/image/" + x + "/" + y + "/" + z
+            + "/" + upx + "/" + upy + "/" + upz + "/"
+            + lowquality.toString();
+
+        // Let's cache a bunch of the images so that requests
+        // don't get cancelled by the browser. 
+        // Cancelled requests causes the server to give up/become
+        // slow for a specific client probably due to TCP timeouts.
+        var temp = new Image();
+        temp.src = path;
+        cached_images.push(temp);
+        if (cached_images.length > MAX_CACHE_LENGTH)
+        {
+            cached_images.splice(0, Math.floor(MAX_CACHE_LENGTH / 2));
+        }
+        img_tag.attr("src", path);
     }
 
     function rotate(mouse_x, mouse_y, lowquality)
