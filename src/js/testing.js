@@ -3,7 +3,7 @@ Tester = function(configs)
     horde = null;
     counter = 0;
     clickTypes = ['mousedown', 'mousemove', 'mouseup'];
-    var $el = $("#img");
+    var $el = $(".evrst");
     prevX = $el.outerWidth() / 2.0;
     prevY = $el.outerHeight() / 2.0;
     randy = function(){};
@@ -42,14 +42,14 @@ Tester = function(configs)
         var custom_toucher = gremlins.species.clicker()
             .clickTypes(['mousedown', 'mousemove', 'mouseup'])
             .canClick(function(element){
-                if (element.getAttribute("id") == "img")
+                if (element.getAttribute("class") == "evrst")
                 {
                     return true;
                 }
                 return false;
             })
             .positionSelector(function(){
-                var $el = $("#img");
+                var $el = $(".evrst");
                 var offset = $el.offset();
                 newPos = [(prevX + Math.random() * 20) % $el.outerWidth() - 10.0, 
                     (prevY + Math.random() * 20) % $el.outerHeight() - 10.0];
@@ -64,7 +64,7 @@ Tester = function(configs)
             .gremlin(custom_toucher);
 
         horde.strategy(gremlins.strategies.distribution()
-                .delay(20)
+                .delay(5)
                 .distribution([0.33, 0.33, 0.33])
         );
         horde.unleash({nb: 10000});

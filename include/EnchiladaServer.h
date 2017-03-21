@@ -33,6 +33,8 @@ namespace ench {
                     Net::Http::ResponseWriter response);
             void handleJS(const Rest::Request &request, 
                     Net::Http::ResponseWriter response);
+            void handleCSS(const Rest::Request &request, 
+                    Net::Http::ResponseWriter response);
             void handleImage(const Rest::Request &request,
                     Net::Http::ResponseWriter response);
 

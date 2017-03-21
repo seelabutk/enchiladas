@@ -33,7 +33,7 @@ int main(int argc, const char **argv)
     pbnj::pbnjInit(&argc, argv);
 
     pbnj::Volume *volume = new pbnj::Volume(config->dataFilename, config->dataVariable,
-            config->dataXDim, config->dataYDim, config->dataZDim);
+            config->dataXDim, config->dataYDim, config->dataZDim, true);
 
     volume->setColorMap(config->colorMap);
     volume->setOpacityMap(config->opacityMap);

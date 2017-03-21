@@ -1,33 +1,21 @@
 <!DOCTYPE html>
     <head>
-        <title>Enchiladas</title>
+        <title>Tapestry</title>
+        <link rel="stylesheet" href="css/style.css">
         <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
         <script src="js/gremlins.min.js"></script>
         <script src="js/testing.js"></script>
         <script src="js/sylvester.js"></script>
         <script src="js/math.js"></script>
         <script src="js/arcball.js"></script>
-        <script src="js/enchiladas.js"></script>
-        <style>
-            html, body
-            {
-                padding: 0;
-                margin: 0;
-                background-color: black;
-            }
-            #img
-            {
-                display: block;
-                margin: auto;
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-            }
-        </style>
+        <script src="js/tapestry.js"></script>
+        <script src="js/main.js"></script>
     </head>
     <body>
-        <img id = "img" src="/image" width="250" height="250"/>    
+        <img class="hyperimage" data-volume="magnetic" src="/image" width="250" height="250"/>    
+        <img class="hyperimage" style="right: inherit; top: inherit;" data-volume="magnetic" src="/image" width="250" height="250"/>    
+        <img class="hyperimage" style="right: inherit; bottom: inherit;" data-volume="magnetic" src="/image" width="250" height="250"/>    
+        <img class="hyperimage" style="left: inherit; top: inherit;" data-volume="magnetic" src="/image" width="250" height="250"/>    
+        <img class="hyperimage" style="left: inherit; bottom: inherit;" data-volume="magnetic" src="/image" width="250" height="250"/>    
     </body>
 </html>
