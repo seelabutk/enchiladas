@@ -12,6 +12,7 @@
 #include "Camera.h"
 #include "Configuration.h"
 #include "Renderer.h"
+#include "TransferFunction.h"
 
 namespace ench {
 
@@ -60,7 +61,7 @@ void EnchiladaServer::setupRoutes()
     Routes::Get(router, "/css/:filename",
             Routes::bind(&EnchiladaServer::handleCSS, this));
     // serving renders
-    Routes::Get(router, "/image/:dataset?/:x/:y/:z/:upx/:upy/:upz/:lowquality",
+    Routes::Get(router, "/image/:dataset/:x/:y/:z/:upx/:upy/:upz/:lowquality/:options?",
             Routes::bind(&EnchiladaServer::handleImage, this));
 }
 
@@ -116,10 +117,45 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         lowquality = request.param(":lowquality").as<int>();
     }
 
+    if (volume_map.count(dataset) == 0)
+    {
+        response.send(Http::Code::Not_Found, "Image does not exist");
+        return;
+    }
+
     pbnj::Configuration *config = std::get<0>(volume_map[dataset]);
     pbnj::Volume *volume = std::get<1>(volume_map[dataset]);
     pbnj::Camera *camera = std::get<2>(volume_map[dataset]);
     pbnj::Renderer *renderer = std::get<3>(volume_map[dataset]);
+    //volume->setColorMap(config->colorMap);
+    
+    if (request.hasParam(":options"))
+    {
+        /*std::string options_line = request.param(":options").as<std::string>();
+        std::vector<std::string> options;
+        const char *options_chars = options_line.c_str();
+        do
+        {
+            const char *begin = options_chars;
+            while(*options_chars != ',' && *options_chars)
+                options_chars++;
+            options.push_back(std::string(begin, options_chars));
+
+        } while(0 != *options_chars++);
+
+        for (auto it = options.begin(); it != options.end(); it++)
+        {
+            if (*it == "colormap")
+            {
+                it++; // Get the value of the colormap
+                if (*it == "viridis")
+                    volume->setColorMap(pbnj::viridis);
+                else if (*it == "magma")
+                    volume->setColorMap(pbnj::magma);
+            }
+        }*/
+        //volume->setColorMap(pbnj::magma);
+    }
 
     std::vector<unsigned char> png;
 
