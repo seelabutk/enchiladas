@@ -19,8 +19,9 @@ namespace ench {
     class EnchiladaServer {
 
         public:
-            EnchiladaServer(Net::Address addr, pbnj::Renderer *r,
-                    pbnj::Configuration *co, pbnj::Camera *ca);
+            EnchiladaServer(Net::Address addr, std::map<std::string, 
+                    std::tuple<pbnj::Configuration*, pbnj::Volume*, 
+                    pbnj::Camera*, pbnj::Renderer*>> vm);
 
             void init(size_t threads=2);
             void start();
@@ -41,9 +42,8 @@ namespace ench {
             std::shared_ptr<Net::Http::Endpoint> httpEndpoint;
             Rest::Router router;
 
-            pbnj::Renderer *renderer;
-            pbnj::Configuration *config;
-            pbnj::Camera *camera;
+            std::map<std::string, std::tuple<pbnj::Configuration*, 
+                pbnj::Volume*, pbnj::Camera*, pbnj::Renderer*>> volume_map;
     };
 }
 
