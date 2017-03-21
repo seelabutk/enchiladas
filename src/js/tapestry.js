@@ -43,14 +43,6 @@
         $(this.element).mouseup();
     }
 
-    $.fn.tapestry.settings = {
-        width: 512,
-        height: 512,
-        max_cache_length: 512,
-        enable_zoom: true,
-        enable_rotation: true
-    };
-
     Tapestry.prototype.setup_camera = function(position, up)
     {
         this.camera = new ArcBall();
@@ -79,9 +71,15 @@
 
         var dataset = $(this.element).attr("data-volume");
         
+        var options = "";
+        if ($(this.element).attr("data-colormap"))
+        {
+            options += "colormap," + $(this.element).attr("data-colormap");
+        }
+
         var path = "/image/" + dataset + "/" + x + "/" + y + "/" + z
             + "/" + upx + "/" + upy + "/" + upz + "/"
-            + lowquality.toString();
+            + lowquality.toString() + "/" + options;
 
         // Let's cache a bunch of the images so that requests
         // don't get cancelled by the browser. 
@@ -155,6 +153,42 @@
             return false;
         });
 
+        // MOA::BROKEN
+        /*
+         * Setup camera linking using a double click event
+         */
+        $(this.element).on("dblclick", function(){
+            if (self.settings.camera_link_status == 0)
+            {
+                // Look for others
+                var found = false;
+                $(".hyperimage").each(function(){
+                    if ($(this).data("tapestry").settings.camera_link_status == 1)
+                    {
+                        self.camera = $(this).data("tapestry").camera;
+                        self.settings.camera_link_status = 2; 
+                    }
+                });
+
+                // If we didn't find a hyperimage ready to be linked then make this
+                // one ready to be linked
+                if (found == false)
+                {
+                    self.settings.camera_link_status = 1;
+                }
+            }
+            else
+            {
+                // Reset the camera
+                var current_camera_position = self.camera.position;
+                var current_camera_up = self.camera.up;
+                self.setup_camera(current_camera_position, current_camera_up);
+            }
+        });
+
+        /* 
+         * Touch event handlers
+         */
         $(this.element).on("touchstart", function(event){
             self.is_drag = true;
 
@@ -189,5 +223,17 @@
             return false;
         });
     }
+
+    /*
+     * Default settings for a tapestry object
+     */
+    $.fn.tapestry.settings = {
+        width: 512,
+        height: 512,
+        max_cache_length: 512,
+        enable_zoom: true,
+        enable_rotation: true,
+        camera_link_status: 0 // 0: Not linked, 1: Waiting to be linked, 2: Linked
+    };
 
 }(jQuery, window));

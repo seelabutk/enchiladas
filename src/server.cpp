@@ -49,7 +49,7 @@ int main(int argc, const char **argv)
         if (extension.compare(".json") == 0)
         {
             std::tuple<pbnj::Configuration*, pbnj::Volume*, pbnj::Camera*, pbnj::Renderer*> pbnj_container; 
-            pbnj::Configuration *config = new pbnj::Configuration(filename);
+            pbnj::Configuration *config = new pbnj::Configuration(config_dir + "/" + filename);
             pbnj::Volume *volume = new pbnj::Volume(config->dataFilename, 
                     config->dataVariable, config->dataXDim, config->dataYDim, 
                     config->dataZDim, true);
