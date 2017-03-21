@@ -17,10 +17,10 @@ namespace ench {
 
 using namespace Net;
 
-EnchiladaServer::EnchiladaServer(Net::Address addr, pbnj::Renderer *r,
-        pbnj::Configuration *co, pbnj::Camera *ca) :
-    httpEndpoint(std::make_shared<Net::Http::Endpoint>(addr)), renderer(r),
-    config(co), camera(ca)
+EnchiladaServer::EnchiladaServer(Net::Address addr, std::map<std::string, 
+        std::tuple<pbnj::Configuration*, pbnj::Volume*,pbnj::Camera*, 
+        pbnj::Renderer*>> vm):  
+    httpEndpoint(std::make_shared<Net::Http::Endpoint>(addr)), volume_map(vm)
 {
 }
 
@@ -89,6 +89,7 @@ void EnchiladaServer::handleCSS(const Rest::Request &request,
 void EnchiladaServer::handleImage(const Rest::Request &request,
         Net::Http::ResponseWriter response)
 {
+
     int camera_x = 0;
     int camera_y = 0;
     int camera_z = 0;
@@ -98,9 +99,12 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     float up_z = 0;
 
     int lowquality = 0;
+    std::string dataset = "";
 
     if (request.hasParam(":dataset"))
     {
+        dataset = request.param(":dataset").as<std::string>();
+
         camera_x = request.param(":x").as<std::int32_t>(); 
         camera_y = request.param(":y").as<std::int32_t>(); 
         camera_z = request.param(":z").as<std::int32_t>(); 
@@ -111,6 +115,11 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
 
         lowquality = request.param(":lowquality").as<int>();
     }
+
+    pbnj::Configuration *config = std::get<0>(volume_map[dataset]);
+    pbnj::Volume *volume = std::get<1>(volume_map[dataset]);
+    pbnj::Camera *camera = std::get<2>(volume_map[dataset]);
+    pbnj::Renderer *renderer = std::get<3>(volume_map[dataset]);
 
     std::vector<unsigned char> png;
 

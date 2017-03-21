@@ -76,8 +76,10 @@
         var upx = new_camera_up.elements[0].toFixed(3);
         var upy = new_camera_up.elements[1].toFixed(3);
         var upz = new_camera_up.elements[2].toFixed(3);
+
+        var dataset = $(this.element).attr("data-volume");
         
-        var path = "/image/magnetic/" + x + "/" + y + "/" + z
+        var path = "/image/" + dataset + "/" + x + "/" + y + "/" + z
             + "/" + upx + "/" + upy + "/" + upz + "/"
             + lowquality.toString();
 
