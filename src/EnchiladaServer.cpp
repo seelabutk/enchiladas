@@ -56,8 +56,11 @@ void EnchiladaServer::setupRoutes()
     // serving static js files
     Routes::Get(router, "/js/:filename", 
             Routes::bind(&EnchiladaServer::handleJS, this));
+    // serving static css files
+    Routes::Get(router, "/css/:filename",
+            Routes::bind(&EnchiladaServer::handleCSS, this));
     // serving renders
-    Routes::Get(router, "/image/:x?/:y/:z/:upx/:upy/:upz/:lowquality",
+    Routes::Get(router, "/image/:dataset?/:x/:y/:z/:upx/:upy/:upz/:lowquality",
             Routes::bind(&EnchiladaServer::handleImage, this));
 }
 
@@ -75,6 +78,14 @@ void EnchiladaServer::handleJS(const Rest::Request &request,
     Http::serveFile(response, filename.c_str());
 }
 
+void EnchiladaServer::handleCSS(const Rest::Request &request, 
+        Net::Http::ResponseWriter response)
+{
+    auto filename = request.param(":filename").as<std::string>();
+    filename = "css/" + filename;
+    Http::serveFile(response, filename.c_str());
+}
+
 void EnchiladaServer::handleImage(const Rest::Request &request,
         Net::Http::ResponseWriter response)
 {
@@ -88,7 +99,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
 
     int lowquality = 0;
 
-    if (request.hasParam(":x"))
+    if (request.hasParam(":dataset"))
     {
         camera_x = request.param(":x").as<std::int32_t>(); 
         camera_y = request.param(":y").as<std::int32_t>(); 

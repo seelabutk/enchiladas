@@ -25,3 +25,8 @@ ADD_CUSTOM_COMMAND(TARGET server PRE_BUILD
 ADD_CUSTOM_COMMAND(TARGET server PRE_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_SOURCE_DIR}/src/js ${CMAKE_CURRENT_BINARY_DIR}/js)
+
+# Copy the css directory whenever enchiladas gets built
+ADD_CUSTOM_COMMAND(TARGET server PRE_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/src/css ${CMAKE_CURRENT_BINARY_DIR}/css)
