@@ -14,7 +14,7 @@ $(document).ready(function(){
         }
     }; 
 
-    $(".hyperimage").tapestry({});
+    $(".hyperimage").tapestry({"host": "http://accona.eecs.utk.edu:8010/"});
 
 	// Set up testing if needed
 	if (getUrlParameter("test"))
