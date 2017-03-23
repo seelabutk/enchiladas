@@ -13,7 +13,7 @@
             }); 
         }
 
-        // If the options is a string then expose the plugin's methods
+        // TODO:If the options is a string then expose the plugin's methods
     }
 
     function Tapestry(element, options)
@@ -23,12 +23,22 @@
         this.init();
     }
 
+    function generate_uuid()
+    {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+                    return v.toString(16);
+        });
+    }
+
     Tapestry.prototype.init = function()
     {
         this.canceler = 0;
         this.cached_images = [];
         this.camera = null;
         this.is_drag = false;
+        this.linked_objs = [];
+        this.id = generate_uuid();
         
         $(this.element).attr("width", this.settings.width);
         $(this.element).attr("height", this.settings.height);
@@ -53,14 +63,19 @@
         this.camera.zoomScale = this.camera.position.elements[2];
     }
 
-    Tapestry.prototype.render = function(lowquality)
+    Tapestry.prototype.render = function(lowquality, remote_call)
     {
+        if (typeof remote_call === 'undefined')
+        {
+            remote_call = false;
+        }
+
         var m = $M(this.camera.Transform);
         m = m.inverse();
 
         var new_camera_position = m.multiply(this.camera.position);
         var new_camera_up = m.multiply(this.camera.up);
-        
+
         var x = new_camera_position.elements[0].toFixed(3);
         var y = new_camera_position.elements[1].toFixed(3);
         var z = new_camera_position.elements[2].toFixed(3);
@@ -77,7 +92,7 @@
             options += "colormap," + $(this.element).attr("data-colormap");
         }
 
-        var path = "/image/" + dataset + "/" + x + "/" + y + "/" + z
+        var path = this.settings.host + "/image/" + dataset + "/" + x + "/" + y + "/" + z
             + "/" + upx + "/" + upy + "/" + upz + "/"
             + lowquality.toString() + "/" + options;
 
@@ -93,6 +108,17 @@
             this.cached_images.splice(0, Math.floor(this.settings.max_cache_length / 2));
         }
         $(this.element).attr("src", path);
+
+        // Don't rotate linked views if this call is
+        // from one of them otherwise it'll be an infinite
+        // loop
+        if (!remote_call)
+        {
+            for (var i = 0; i < this.linked_objs.length; i++)
+            {
+                this.linked_objs[i].render(lowquality, true);
+            }
+        }
     }
 
     Tapestry.prototype.rotate = function(mouse_x, mouse_y, lowquality)
@@ -103,6 +129,19 @@
             this.camera.move(mouse_x, mouse_y);
             this.render(lowquality);
             this.is_drag = true;
+        }
+    }
+    
+    Tapestry.prototype.do_action = function(action)
+    {
+        var operator_index = action.search(/\+|=/);
+        var operation = action.slice(0, operator_index);
+        if (operation == 'position')
+        {
+            var position = action.slice(operator_index + 1);
+            position = position.split(",");
+            this.camera.rotateTo(Vector.create([parseInt(position[0]), parseInt(position[1]), parseInt(position[2])]));
+            this.render(0);
         }
     }
 
@@ -166,7 +205,10 @@
                     if ($(this).data("tapestry").settings.camera_link_status == 1)
                     {
                         self.camera = $(this).data("tapestry").camera;
-                        self.settings.camera_link_status = 2; 
+                        self.settings.camera_link_status = 2;
+                        self.linked_objs.push($(this).data("tapestry"));
+                        // Add ourself to that object too
+                        $(this).data("tapestry").linked_objs.push(self);
                     }
                 });
 
@@ -183,6 +225,9 @@
                 var current_camera_position = self.camera.position;
                 var current_camera_up = self.camera.up;
                 self.setup_camera(current_camera_position, current_camera_up);
+                
+                // TODO: Clean up all linkages of this object
+                
             }
         });
 
@@ -222,12 +267,19 @@
             }
             return false;
         });
+
+        $('.tapestry-action').on("click", function(){
+            var action = $(this).attr("data-action");
+            var owner = $(this).attr("for");
+            $("#" + owner).data("tapestry").do_action(action);
+        });
     }
 
     /*
      * Default settings for a tapestry object
      */
     $.fn.tapestry.settings = {
+        host: "",
         width: 512,
         height: 512,
         max_cache_length: 512,

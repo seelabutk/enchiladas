@@ -13,9 +13,11 @@
     </head>
     <body>
         <img class="hyperimage" data-volume="jet" src="/image" width="250" height="250"/>    
-        <img class="hyperimage" style="right: inherit; top: inherit;" data-volume="teapot" data-colormap="viridis" src="/image" width="250" height="250"/>    
-        <img class="hyperimage" style="right: inherit; bottom: inherit;" data-volume="magnetic" src="/image" width="250" height="250"/>    
+        <img class="hyperimage" style="right: inherit; top: inherit;" data-volume="teapot" src="/image" width="250" height="250"/>    
+        <img class="hyperimage" id="mag" style="right: inherit; bottom: inherit;" data-volume="magnetic" src="/image" width="250" height="250"/>    
         <img class="hyperimage" style="left: inherit; top: inherit;" data-volume="supernova" src="/image" width="250" height="250"/>    
         <img class="hyperimage" style="left: inherit; bottom: inherit;" data-volume="turbulence" src="/image" width="250" height="250"/>    
+
+        <a class="tapestry-action" href="#" for="mag" data-action="position=-100,10,800">Move dat data</a>
     </body>
 </html>

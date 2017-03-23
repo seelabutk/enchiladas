@@ -99,6 +99,66 @@ ArcBall.prototype = {
        //set the final transform matrix that we will multiply by the modelView
        this.Transform = ArrayToSylvesterMatrix(SetRotationMatrixFrom3f(tmp),4);
        this.Transform.elements[3][3] = this.zoomScale;
+    },
+
+    // Rotates to a position (4 element vector)
+    rotateTo: function(pos)
+    {
+        this.LastRot   = [  1.0,  0.0,  0.0,                  // Last Rotation
+                           0.0,  1.0,  0.0,
+                           0.0,  0.0,  1.0 ];
+        var m = $M(this.Transform);
+        m = m.inverse();
+        var camera_position = $V(this.position.elements.slice(0, 3));
+        var camera_up = $V(this.up.elements.slice(0, 3));
+        var p = camera_position.elements;
+        var mag = Math.sqrt(p[0]*p[0] + p[1] * p[1] + p[2] * p[2]);
+        p = pos.elements;
+        var dst_mag = Math.sqrt(p[0]*p[0] + p[1] * p[1] + p[2] * p[2]);
+        var normalized_src = camera_position.toUnitVector();
+        var normalized_dst = pos.toUnitVector();
+        normalized_src = Vector.create([normalized_src.elements[0], normalized_src.elements[1], normalized_src.elements[2]]);
+        normalized_dst = Vector.create([normalized_dst.elements[0], normalized_dst.elements[1], normalized_dst.elements[2]]);
+        
+        //Compute the vector perpendicular to the begin and end vectors
+        var Perp = cross(normalized_src.elements, normalized_dst.elements);
+
+        quat = [0.0, 0.0, 0.0, 0.0];
+        //Compute the length of the perpendicular vector
+        if (Vector3fLength(Perp) > 1.0e-5){//if its non-zero
+            //In the quaternion values, w is cosine (theta / 2), where theta is rotation angle
+            quat = [Perp[0],Perp[1],Perp[2],dot(normalized_src.elements, normalized_dst.elements)];
+        } 
+
+        this.ThisRot = Matrix3fSetRotationFromQuat4f(quat);
+
+        //accumulate the current rotation to all previous rotations
+        var tmp = ArrayToSylvesterMatrix(this.ThisRot,3)
+                    .x(ArrayToSylvesterMatrix(this.LastRot,3))
+
+        //save rotation for next mouse event
+        this.ThisRot = SylvesterToArray(tmp);
+
+        //set the final transform matrix that we will multiply by the modelView
+        this.Transform = ArrayToSylvesterMatrix(SetRotationMatrixFrom3f(tmp),4);
+        //this.Transform.elements[3][3] *= dst_mag;
+        this.position.elements[2] = dst_mag;
+        this.zoomScale = dst_mag;
+    },
+    
+    rotateByAngle: function(angle, axis)
+    {
+        var x = axis == 'x' ? 1 : 0;
+        var y = axis == 'y' ? 1 : 0;
+        var z = axis == 'z' ? 1 : 0;
+        var inRadians = angle * Math.PI / 180.0;
+        var rotation = Matrix.Rotation(inRadians, Vector.create([x, y, z])).flatten();
+        this.ThisRot = rotation;
+        var tmp = ArrayToSylvesterMatrix(this.ThisRot, 3)
+                    .x(ArrayToSylvesterMatrix(this.LastRot, 3));
+        this.ThisRot = SylvesterToArray(tmp);
+
+        this.Transform = this.Transform.x(ArrayToSylvesterMatrix(SetRotationMatrixFrom3f(tmp), 4));
     }
 };
 /*-------- End ArcBall*/
