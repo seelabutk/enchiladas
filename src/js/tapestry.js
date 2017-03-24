@@ -196,7 +196,7 @@
             self.is_drag = true;
 
             self.camera.LastRot = self.camera.ThisRot;
-            self.camera.click(event.clientX - $(self.element).offset().left, event.clientY - $(self.element).offset().top);
+            self.camera.click(event.clientX - self.element.getBoundingClientRect().left, event.clientY - self.element.getBoundingClientRect().top);
 
             return false;
         });
@@ -205,15 +205,15 @@
             self.canceler = (self.canceler + 1) % 1000;
             if (self.canceler % 5 == 0)
             {
-                var mouse_x = event.clientX - $(self.element).offset().left;
-                var mouse_y = event.clientY - $(self.element).offset().top;
+                var mouse_x = event.clientX - self.element.getBoundingClientRect().left;
+                var mouse_y = event.clientY - self.element.getBoundingClientRect().top;
                 self.rotate(mouse_x, mouse_y, 1); // Render low quality version
             }
         });
 
         $(this.element).on("mouseup", function(event){
-            var mouse_x = event.clientX - $(self.element).offset().left;
-            var mouse_y = event.clientY - $(self.element).offset().top;
+            var mouse_x = event.clientX - self.element.getBoundingClientRect().left;
+            var mouse_y = event.clientY - self.element.getBoundingClientRect().top;
 
             self.rotate(mouse_x, mouse_y, 0); // Render high quality version
             self.is_drag = false;
@@ -286,8 +286,8 @@
 
             //tell the camera where the touch event happened
             self.camera.click(event.originalEvent.touches[0].clientX - 
-                    $(self.element).offset().left, event.originalEvent.touches[0].clientY - 
-                    $(self.element).offset().top);
+                    self.element.getBoundingClientRect().left, event.originalEvent.touches[0].clientY - 
+                    self.element.getBoundingClientRect().top);
 
             return false;
         });
@@ -304,8 +304,8 @@
         $(this.element).on("touchmove", function(event){
             if (self.is_drag == true)
             {
-                mouse_x = event.originalEvent.touches[0].clientX - $(self.element).offset().left;
-                mouse_y = event.originalEvent.touches[0].clientY - $(self.element).offset().top;
+                mouse_x = event.originalEvent.touches[0].clientX - self.element.getBoundingClientRect().left;
+                mouse_y = event.originalEvent.touches[0].clientY - self.element.getBoundingClientRect().top;
 
                 self.rotate(mouse_x, mouse_y, 1); // Render low quality version
             }
