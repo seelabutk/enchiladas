@@ -129,9 +129,22 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     pbnj::Renderer *renderer = std::get<3>(volume_map[dataset]);
     //volume->setColorMap(config->colorMap);
     
+    std::vector<unsigned char> png;
+
+    if (lowquality)
+    {
+        renderer->cameraWidth = camera->imageWidth = 64;
+        renderer->cameraHeight = camera->imageHeight = 64;
+    }
+    else
+    {
+        renderer->cameraWidth = camera->imageWidth = config->imageWidth;
+        renderer->cameraHeight = camera->imageHeight = config->imageHeight;
+    }
+
     if (request.hasParam(":options"))
     {
-        /*std::string options_line = request.param(":options").as<std::string>();
+        std::string options_line = request.param(":options").as<std::string>();
         std::vector<std::string> options;
         const char *options_chars = options_line.c_str();
         do
@@ -153,22 +166,22 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
                 else if (*it == "magma")
                     volume->setColorMap(pbnj::magma);
             }
-        }*/
+
+            if (*it == "hq")
+            {
+                it++;
+                if (*it == "true")
+                {
+                    std::cout<<"Woah, easter egg, rendering an 8192x8192 with 8 samples. "<<std::endl;
+                    renderer->cameraWidth = camera->imageWidth = 8192;
+                    renderer->cameraHeight = camera->imageHeight = 8192;
+                    renderer->setSamples(8);
+                }
+            }
+        }
         //volume->setColorMap(pbnj::magma);
     }
 
-    std::vector<unsigned char> png;
-
-    if (lowquality)
-    {
-        renderer->cameraWidth = camera->imageWidth = 64;
-        renderer->cameraHeight = camera->imageHeight = 64;
-    }
-    else
-    {
-        renderer->cameraWidth = camera->imageWidth = config->imageWidth;
-        renderer->cameraHeight = camera->imageHeight = config->imageHeight;
-    }
 
     camera->setPosition(camera_x, camera_y, camera_z);
     camera->setUpVector(up_x, up_y, up_z);

@@ -76,6 +76,7 @@ int main(int argc, const char **argv)
 
         camera->setPosition(config->cameraX, config->cameraY, config->cameraZ);
 
+        renderer->setBackgroundColor(config->bgColor);
         renderer->setVolume(volume);
         renderer->setCamera(camera);
     }
