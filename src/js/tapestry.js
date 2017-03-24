@@ -5,6 +5,13 @@
         // Make and store a tapestry per container
         if (options === undefined || typeof options === 'object')
         {
+            // Setup event handlers for each hyperaction
+            $('.tapestry-action').on("click", function(){
+                var action = $(this).attr("data-action");
+                var owner = $(this).attr("for");
+                $("#" + owner).data("tapestry").do_action(action);
+            });
+
             return this.each(function(){
                 if (!$.data(this, "tapestry"))
                 {
@@ -57,7 +64,7 @@
     {
         this.camera = new ArcBall();
         this.camera.up = (typeof up !== 'undefined' ? up : $V([0, 1, 0, 1.0]));
-        this.camera.position = (typeof position !== 'undefined' ? position : $V([0, 0, 512, 1.0]));
+        this.camera.position = (typeof position !== 'undefined' ? position : $V([0, 0, this.settings.zoom, 1.0]));
 
         this.camera.setBounds(this.settings.width, this.settings.height);
         this.camera.zoomScale = this.camera.position.elements[2];
@@ -134,12 +141,14 @@
     
     Tapestry.prototype.link = function(target)
     {
-        
-        target.camera = this.camera;
-        this.settings.camera_link_status = 2;
-        this.linked_objs.push(target);
-        // Add ourself to that object too
-        target.linked_objs.push(this);
+        if (this.linked_objs.indexOf(target) == -1)
+        {
+            target.camera = this.camera;
+            this.settings.camera_link_status = 2;
+            this.linked_objs.push(target);
+            // Add ourself to that object too
+            target.linked_objs.push(this);
+        }
     }
     
     Tapestry.prototype.unlink = function(target, stop_recursion)
@@ -225,6 +234,8 @@
         });
 
         $(this.element).on("mousewheel", function(event){
+            if (self.settings.enableZoom == false)
+                return false;
             self.camera.zoomScale -= event.originalEvent.wheelDeltaY * 0.1;
             self.camera.position.elements[2] = self.camera.zoomScale;
             self.render(1);
@@ -312,11 +323,6 @@
             return false;
         });
 
-        $('.tapestry-action').on("click", function(){
-            var action = $(this).attr("data-action");
-            var owner = $(this).attr("for");
-            $("#" + owner).data("tapestry").do_action(action);
-        });
     }
 
     /*
@@ -326,6 +332,7 @@
         host: "",
         width: 512,
         height: 512,
+        zoom: 512,
         max_cache_length: 512,
         enable_zoom: true,
         enable_rotation: true,
