@@ -132,9 +132,32 @@
         }
     }
     
+    Tapestry.prototype.link = function(target)
+    {
+        
+        target.camera = this.camera;
+        this.settings.camera_link_status = 2;
+        this.linked_objs.push(target);
+        // Add ourself to that object too
+        target.linked_objs.push(this);
+    }
+    
+    Tapestry.prototype.unlink = function(target, stop_recursion)
+    {
+        for (var i = 0; i < this.linked_objs; i++)
+        {
+            if (target.id == this.linked_objs[i].id)
+            {
+                this.linked_objs.splice(i, 1);
+                if (!stop_recursion)
+                    target.unlink(this, true);
+            }
+        } 
+    }
+
     Tapestry.prototype.do_action = function(action)
     {
-        var operator_index = action.search(/\+|=/);
+        var operator_index = action.search(/\+|=|\(|\)/);
         var operation = action.slice(0, operator_index);
         if (operation == 'position')
         {
@@ -143,6 +166,27 @@
             this.camera.rotateTo(Vector.create([parseInt(position[0]), parseInt(position[1]), parseInt(position[2])]));
             this.render(0);
         }
+        else if (operation == 'link')
+        {
+            var targets = action.slice(operator_index + 1);
+            targets = targets.replace(/\(|\)| /g, "");
+            targets = targets.split(",");
+            for (var i = 0; i < targets.length; i++)
+            {
+                this.link($("#" + targets[i]).data("tapestry"));
+            }
+        }
+        else if (operation == 'unlink')
+        {
+            var targets = action.slice(operator_index + 1);
+            targets = targets.replace(/\(|\)| /g, "");
+            targets = targets.split(",");
+            for (var i = 0; i < targets.length; i++)
+            {
+                this.unlink($("#" + targets[i]).data("tapestry"), false);
+            }
+        }
+
     }
 
     Tapestry.prototype.setup_handlers = function()
