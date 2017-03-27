@@ -7,21 +7,28 @@
 #include "Renderer.h"
 #include "Configuration.h"
 #include "Camera.h"
+#include "TimeSeries.h"
 
 #include "http.h"
 #include "router.h"
 #include "endpoint.h"
 
 namespace ench {
-
     using namespace Net;
 
-    class EnchiladaServer {
+    union Dataset
+    {
+        pbnj::Volume* volume;
+        pbnj::TimeSeries *timeseries;
+    };
 
+    typedef std::tuple<pbnj::Configuration*, ench::Dataset, 
+            pbnj::Camera*, pbnj::Renderer*> pbnj_container;
+
+    class EnchiladaServer 
+    {
         public:
-            EnchiladaServer(Net::Address addr, std::map<std::string, 
-                    std::tuple<pbnj::Configuration*, pbnj::Volume*, 
-                    pbnj::Camera*, pbnj::Renderer*>> vm);
+            EnchiladaServer(Net::Address addr, std::map<std::string, pbnj_container> vm);
 
             void init(size_t threads=2);
             void start();
@@ -42,8 +49,7 @@ namespace ench {
             std::shared_ptr<Net::Http::Endpoint> httpEndpoint;
             Rest::Router router;
 
-            std::map<std::string, std::tuple<pbnj::Configuration*, 
-                pbnj::Volume*, pbnj::Camera*, pbnj::Renderer*>> volume_map;
+            std::map<std::string, pbnj_container> volume_map;
     };
 }
 

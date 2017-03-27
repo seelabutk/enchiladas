@@ -13,14 +13,14 @@
 #include "Configuration.h"
 #include "Renderer.h"
 #include "TransferFunction.h"
+#include "TimeSeries.h"
 
 namespace ench {
 
 using namespace Net;
 
 EnchiladaServer::EnchiladaServer(Net::Address addr, std::map<std::string, 
-        std::tuple<pbnj::Configuration*, pbnj::Volume*,pbnj::Camera*, 
-        pbnj::Renderer*>> vm):  
+        ench::pbnj_container> vm):  
     httpEndpoint(std::make_shared<Net::Http::Endpoint>(addr)), volume_map(vm)
 {
 }
@@ -124,10 +124,9 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     }
 
     pbnj::Configuration *config = std::get<0>(volume_map[dataset]);
-    pbnj::Volume *volume = std::get<1>(volume_map[dataset]);
+    ench::Dataset udataset = std::get<1>(volume_map[dataset]);
     pbnj::Camera *camera = std::get<2>(volume_map[dataset]);
     pbnj::Renderer *renderer = std::get<3>(volume_map[dataset]);
-    //volume->setColorMap(config->colorMap);
     
     std::vector<unsigned char> png;
 
@@ -162,9 +161,9 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
             {
                 it++; // Get the value of the colormap
                 if (*it == "viridis")
-                    volume->setColorMap(pbnj::viridis);
+                    udataset.volume->setColorMap(pbnj::viridis);
                 else if (*it == "magma")
-                    volume->setColorMap(pbnj::magma);
+                    udataset.volume->setColorMap(pbnj::magma);
             }
 
             if (*it == "hq")
@@ -178,8 +177,13 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
                     renderer->setSamples(8);
                 }
             }
+            if (*it == "timestep")
+            {
+                it++;
+                int timestep = std::stoi(*it);   
+                renderer->setVolume(udataset.timeseries->getVolume(timestep));
+            }
         }
-        //volume->setColorMap(pbnj::magma);
     }
 
 
