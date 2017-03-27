@@ -46,6 +46,8 @@
         this.is_drag = false;
         this.linked_objs = [];
         this.id = generate_uuid();
+        this.timeseries_timer = null;
+        this.current_timestep = 0;
         
         $(this.element).attr("width", this.settings.width);
         $(this.element).attr("height", this.settings.height);
@@ -99,6 +101,11 @@
             options += "colormap," + $(this.element).attr("data-colormap");
         }
 
+        if (this.settings.n_timesteps > 1)
+        {
+            options += "timestep," + this.current_timestep;
+        }
+
         var path = this.settings.host + "/image/" + dataset + "/" + x + "/" + y + "/" + z
             + "/" + upx + "/" + upy + "/" + upz + "/"
             + lowquality.toString() + "/" + options;
@@ -139,27 +146,46 @@
         }
     }
     
+    Tapestry.prototype.unlink_camera = function()
+    { 
+        this.setup_camera();
+        this.render(0);
+    }
+    
     Tapestry.prototype.link = function(target)
     {
         if (this.linked_objs.indexOf(target) == -1)
         {
             target.camera = this.camera;
             this.settings.camera_link_status = 2;
+
+            /*for (i in this.linked_objs)
+            {
+                this.linked_objs[i].link(target);
+            }*/
+
             this.linked_objs.push(target);
             // Add ourself to that object too
             target.linked_objs.push(this);
+
+            target.render(0);
         }
     }
     
+    // Currently, the target's camera gets reset to the original position
+    // after unlinking.
     Tapestry.prototype.unlink = function(target, stop_recursion)
     {
-        for (var i = 0; i < this.linked_objs; i++)
+        for (var i = 0; i < this.linked_objs.length; i++)
         {
             if (target.id == this.linked_objs[i].id)
             {
                 this.linked_objs.splice(i, 1);
                 if (!stop_recursion)
+                {
                     target.unlink(this, true);
+                    target.unlink_camera();
+                }
             }
         } 
     }
@@ -172,8 +198,30 @@
         {
             var position = action.slice(operator_index + 1);
             position = position.split(",");
-            this.camera.rotateTo(Vector.create([parseInt(position[0]), parseInt(position[1]), parseInt(position[2])]));
+            
+            var m = $M(this.camera.Transform);
+            m = m.inverse();
+
+            var current_position = Vector.create(m.multiply(this.camera.position).elements.slice(0, 3));
+            var pos = Vector.create([parseInt(position[0]), parseInt(position[1]), parseInt(position[2])]);
+            this.camera.rotateTo(pos);
             this.render(0);
+            return this;
+
+            var iteration = 0;
+            var self = this;
+            animation_timer = setInterval(function(){
+                var temp_pos = pos
+                    .x(iteration / 100.0)
+                    .add(current_position.x(1 - iteration / 100.0));
+                self.camera.rotateTo(temp_pos);
+                self.render(1);
+                if (iteration++ > 100)
+                {
+                    clearInterval(animation_timer);
+                    self.render(0);
+                }
+            }, 50);
         }
         else if (operation == 'link')
         {
@@ -194,6 +242,18 @@
             {
                 this.unlink($("#" + targets[i]).data("tapestry"), false);
             }
+        }
+        else if (operation == 'play')
+        {
+            self = this;
+            this.timeseries_timer = setInterval(function(){
+                self.current_timestep = (self.current_timestep + 1) % self.settings.n_timesteps;
+                self.render(0);
+            }, this.settings.animation_interval);
+        }
+        else if (operation == 'stop')
+        {
+            clearInterval(this.timeseries_timer);
         }
 
     }
@@ -251,7 +311,7 @@
         /*
          * Setup camera linking using a double click event
          */
-        $(this.element).on("dblclick", function(){
+        /*$(this.element).on("dblclick", function(){
             if (self.settings.camera_link_status == 0)
             {
                 // Look for others
@@ -284,7 +344,7 @@
                 // TODO: Clean up all linkages of this object
                 
             }
-        });
+        });*/
 
         /* 
          * Touch event handlers
@@ -336,6 +396,8 @@
         max_cache_length: 512,
         enable_zoom: true,
         enable_rotation: true,
+        animation_interval: 100,
+        n_timesteps: 1,
         camera_link_status: 0 // 0: Not linked, 1: Waiting to be linked, 2: Linked
     };
 

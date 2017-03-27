@@ -109,8 +109,7 @@ ArcBall.prototype = {
                            0.0,  0.0,  1.0 ];
         var m = $M(this.Transform);
         m = m.inverse();
-        var camera_position = $V(this.position.elements.slice(0, 3));
-        var camera_up = $V(this.up.elements.slice(0, 3));
+        var camera_position = $V(this.position.elements.slice(0, 3));//.x(1.0 / this.position.elements[3]);
         var p = camera_position.elements;
         var mag = Math.sqrt(p[0]*p[0] + p[1] * p[1] + p[2] * p[2]);
         p = pos.elements;
@@ -143,7 +142,7 @@ ArcBall.prototype = {
         this.Transform = ArrayToSylvesterMatrix(SetRotationMatrixFrom3f(tmp),4);
         //this.Transform.elements[3][3] *= dst_mag;
         this.position.elements[2] = dst_mag;
-        this.zoomScale = dst_mag;
+        this.zoomScale = this.position.elements[2];
     },
     
     rotateByAngle: function(angle, axis)
