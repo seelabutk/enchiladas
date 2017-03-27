@@ -48,6 +48,7 @@
         this.id = generate_uuid();
         this.timeseries_timer = null;
         this.current_timestep = 0;
+        this.timerange = [0, 0];
         
         $(this.element).attr("width", this.settings.width);
         $(this.element).attr("height", this.settings.height);
@@ -60,6 +61,13 @@
         this.setup_handlers();
         $(this.element).mousedown();
         $(this.element).mouseup();
+
+        if ($(this.element).attr("data-timerange"))
+        {
+            var range = $(this.element).attr("data-timerange").split("..");
+            this.timerange[0] = parseInt(range[0]);
+            this.timerange[1] = parseInt(range[1]);
+        }
     }
 
     Tapestry.prototype.setup_camera = function(position, up)
@@ -103,7 +111,7 @@
 
         if (this.settings.n_timesteps > 1)
         {
-            options += "timestep," + this.current_timestep;
+            options += "timestep," + (this.current_timestep + this.timerange[0]);
         }
 
         var path = this.settings.host + "/image/" + dataset + "/" + x + "/" + y + "/" + z
@@ -247,7 +255,7 @@
         {
             self = this;
             this.timeseries_timer = setInterval(function(){
-                self.current_timestep = (self.current_timestep + 1) % self.settings.n_timesteps;
+                self.current_timestep = (self.current_timestep + 1) % (self.timerange[1] - self.timerange[0]);
                 self.render(0);
             }, this.settings.animation_interval);
         }

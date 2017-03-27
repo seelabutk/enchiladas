@@ -99,8 +99,12 @@ int main(int argc, const char **argv)
                         config->dataXDim,
                         config->dataYDim,
                         config->dataZDim);
+                dataset.timeseries->setColorMap(config->colorMap);
+                dataset.timeseries->setOpacityMap(config->opacityMap);
+                dataset.timeseries->setOpacityAttenuation(config->opacityAttenuation);
+                dataset.timeseries->setMemoryMapping(true);
+                dataset.timeseries->setMaxMemory(30);
                 renderer->setVolume(dataset.timeseries->getVolume(0));
-
             }
             else
             {
