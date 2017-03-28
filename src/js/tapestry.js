@@ -6,7 +6,7 @@
         if (options === undefined || typeof options === 'object')
         {
             // Setup event handlers for each hyperaction
-            $('.tapestry-action').on("click", function(){
+            $('.hyperaction').on("click", function(){
                 var action = $(this).attr("data-action");
                 var owner = $(this).attr("for");
                 $("#" + owner).data("tapestry").do_action(action);
