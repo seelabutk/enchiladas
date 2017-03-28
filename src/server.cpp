@@ -65,7 +65,9 @@ int main(int argc, const char **argv)
             pbnj::Camera *camera = new pbnj::Camera(
                     config->imageWidth, 
                     config->imageHeight);
-            pbnj::Renderer *renderer = new pbnj::Renderer();
+
+            // Let's keep a renderer per volume to support time series for now
+            pbnj::Renderer **renderer; 
             pbnj::CONFSTATE single_multi = config->getConfigState();
             ench::Dataset dataset;
 
@@ -85,7 +87,11 @@ int main(int argc, const char **argv)
                 dataset.volume->setColorMap(config->colorMap);
                 dataset.volume->setOpacityMap(config->opacityMap);
                 dataset.volume->attenuateOpacity(config->opacityAttenuation);
-                renderer->setVolume(dataset.volume);
+                renderer = new pbnj::Renderer*[1];
+                renderer[0] = new pbnj::Renderer();
+                renderer[0]->setVolume(dataset.volume);
+                renderer[0]->setBackgroundColor(config->bgColor);
+                renderer[0]->setCamera(camera);
             }
             /*
              * If we have a time series
@@ -104,7 +110,18 @@ int main(int argc, const char **argv)
                 dataset.timeseries->setOpacityAttenuation(config->opacityAttenuation);
                 dataset.timeseries->setMemoryMapping(true);
                 dataset.timeseries->setMaxMemory(30);
-                renderer->setVolume(dataset.timeseries->getVolume(0));
+
+                renderer = new pbnj::Renderer*[dataset.timeseries->getLength()];
+                std::cout<<dataset.timeseries->dataSize<<", "
+                    <<dataset.timeseries->maxVolumes<<", ";
+                for (int i = 0; i < dataset.timeseries->getLength(); i++)
+                {
+                    renderer[i] = new pbnj::Renderer();
+                    renderer[i]->setVolume(dataset.timeseries->getVolume(i));
+                    renderer[i]->setBackgroundColor(config->bgColor);
+                    renderer[i]->setCamera(camera);
+                }
+                std::cout<<dataset.timeseries->currentVolumes<<std::endl;
             }
             else
             {
@@ -113,10 +130,6 @@ int main(int argc, const char **argv)
             }
 
             camera->setPosition(config->cameraX, config->cameraY, config->cameraZ);
-
-            renderer->setBackgroundColor(config->bgColor);
-            renderer->setCamera(camera);
-
             volume_map[filename.substr(0, index)] = std::make_tuple(config, 
                     dataset, camera, renderer);
         }
