@@ -256,7 +256,7 @@
             self = this;
             this.timeseries_timer = setInterval(function(){
                 self.current_timestep = (self.current_timestep + 1) % (self.timerange[1] - self.timerange[0]);
-                self.render(0);
+                self.render(self.is_drag + 0);
             }, this.settings.animation_interval);
         }
         else if (operation == 'stop')

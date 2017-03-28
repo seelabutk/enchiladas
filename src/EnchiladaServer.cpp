@@ -126,21 +126,11 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     pbnj::Configuration *config = std::get<0>(volume_map[dataset]);
     ench::Dataset udataset = std::get<1>(volume_map[dataset]);
     pbnj::Camera *camera = std::get<2>(volume_map[dataset]);
-    pbnj::Renderer *renderer = std::get<3>(volume_map[dataset]);
+    pbnj::Renderer **renderer = std::get<3>(volume_map[dataset]);
     
     std::vector<unsigned char> png;
 
-    if (lowquality)
-    {
-        renderer->cameraWidth = camera->imageWidth = 64;
-        renderer->cameraHeight = camera->imageHeight = 64;
-    }
-    else
-    {
-        renderer->cameraWidth = camera->imageWidth = config->imageWidth;
-        renderer->cameraHeight = camera->imageHeight = config->imageHeight;
-    }
-
+    int renderer_index = 0; // Equal to a valid timestep
     if (request.hasParam(":options"))
     {
         std::string options_line = request.param(":options").as<std::string>();
@@ -172,25 +162,43 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
                 if (*it == "true")
                 {
                     std::cout<<"Woah, easter egg, rendering an 8192x8192 with 8 samples. "<<std::endl;
-                    renderer->cameraWidth = camera->imageWidth = 8192;
-                    renderer->cameraHeight = camera->imageHeight = 8192;
-                    renderer->setSamples(8);
+                    renderer[0]->cameraWidth = camera->imageWidth = 8192;
+                    renderer[0]->cameraHeight = camera->imageHeight = 8192;
+                    renderer[0]->setSamples(8);
                 }
             }
             if (*it == "timestep")
             {
                 it++;
-                int timestep = std::stoi(*it);   
-                renderer->setVolume(udataset.timeseries->getVolume(timestep));
+                int timestep = std::stoi(*it);
+                if (timestep >= 0 && timestep < udataset.timeseries->getLength())
+                {
+                    renderer_index = timestep;
+                }
+                else
+                {
+                    std::cerr<<"Invalid timestep: "<<timestep<<std::endl;
+                }
             }
         }
+    }
+
+    if (lowquality)
+    {
+        renderer[renderer_index]->cameraWidth = camera->imageWidth = 64;
+        renderer[renderer_index]->cameraHeight = camera->imageHeight = 64;
+    }
+    else
+    {
+        renderer[renderer_index]->cameraWidth = camera->imageWidth = config->imageWidth;
+        renderer[renderer_index]->cameraHeight = camera->imageHeight = config->imageHeight;
     }
 
 
     camera->setPosition(camera_x, camera_y, camera_z);
     camera->setUpVector(up_x, up_y, up_z);
 
-    renderer->renderToPNGObject(png);
+    renderer[renderer_index]->renderToPNGObject(png);
 
     std::string png_data(png.begin(), png.end());
     auto mime = Http::Mime::MediaType::fromString("image/png");

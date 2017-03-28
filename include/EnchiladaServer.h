@@ -23,7 +23,7 @@ namespace ench {
     };
 
     typedef std::tuple<pbnj::Configuration*, ench::Dataset, 
-            pbnj::Camera*, pbnj::Renderer*> pbnj_container;
+            pbnj::Camera*, pbnj::Renderer**> pbnj_container;
 
     class EnchiladaServer 
     {
