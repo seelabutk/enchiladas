@@ -49,6 +49,7 @@
         this.timeseries_timer = null;
         this.current_timestep = 0;
         this.timerange = [0, 0];
+        this.timelog = {};
         
         $(this.element).attr("width", this.settings.width);
         $(this.element).attr("height", this.settings.height);
@@ -124,6 +125,13 @@
         // slow for a specific client probably due to TCP timeouts.
         var temp = new Image();
         temp.src = path;
+        this.timelog[temp.src] = [Date.now(), lowquality, false, 0];
+        
+        temp.onload = $.proxy(function(ev){
+            this.timelog[ev.target.src][3] = Date.now();
+            this.timelog[ev.target.src][2] = true;
+        }, this);
+
         this.cached_images.push(temp);
         if (this.cached_images.length > this.settings.max_cache_length)
         {
@@ -141,6 +149,45 @@
                 this.linked_objs[i].render(lowquality, true);
             }
         }
+    }
+
+    Tapestry.prototype.getInteractionStats = function(host)
+    {
+        var low_quality_sum = 0;
+        var low_quality_n = 0;
+        var high_quality_sum=0; 
+        var high_quality_n=0;
+        for (i in this.timelog)
+        {
+            if (this.timelog[i][1] && this.timelog[i][2])
+            {
+                low_quality_n++;
+                low_quality_sum += this.timelog[i][3] - this.timelog[i][0];
+            }
+            else if (!this.timelog[i][1] && this.timelog[i][2])
+            {
+                high_quality_n++;
+                high_quality_sum += this.timelog[i][3] - this.timelog[i][0];
+            }
+        }
+        console.log("Average low quality time of response: ", low_quality_sum / low_quality_n);
+        console.log("Average high quality time of response: ", high_quality_sum / high_quality_n);
+        console.log("Number of answered requests for this second: ", high_quality_n + low_quality_n);
+        console.log("Number of requests sent for this second: ", Object.keys(this.timelog).length);
+
+        var self = this;
+        if (typeof host !== 'undefined')
+        {
+            // Send to log server 
+            $.ajax({
+                url: host,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({'load': self.timelog}),
+                success: function(){}
+            });
+        }
+        this.timelog = {};
     }
 
     Tapestry.prototype.rotate = function(mouse_x, mouse_y, lowquality)
