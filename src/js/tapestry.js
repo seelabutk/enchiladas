@@ -115,9 +115,14 @@
             options += "timestep," + (this.current_timestep + this.timerange[0]);
         }
 
+        var quality = lowquality;
+        if (lowquality == 0)
+        {
+            quality = this.settings.width;
+        }
         var path = this.settings.host + "/image/" + dataset + "/" + x + "/" + y + "/" + z
             + "/" + upx + "/" + upy + "/" + upz + "/"
-            + lowquality.toString() + "/" + options;
+            + quality.toString() + "/" + options;
 
         // Let's cache a bunch of the images so that requests
         // don't get cancelled by the browser. 
@@ -172,8 +177,8 @@
         }
         console.log("Average low quality time of response: ", low_quality_sum / low_quality_n);
         console.log("Average high quality time of response: ", high_quality_sum / high_quality_n);
-        console.log("Number of answered requests for this second: ", high_quality_n + low_quality_n);
-        console.log("Number of requests sent for this second: ", Object.keys(this.timelog).length);
+        console.log("Number of answered requests: ", high_quality_n + low_quality_n);
+        console.log("Number of requests sent: ", Object.keys(this.timelog).length);
 
         var self = this;
         if (typeof host !== 'undefined')
@@ -309,6 +314,14 @@
         else if (operation == 'stop')
         {
             clearInterval(this.timeseries_timer);
+        }
+        else if (operation == 'switch_config')
+        {
+            var targets = action.slice(operator_index + 1);
+            targets = targets.replace(/\(|\)| /g, "");
+            targets = targets.split(",");
+            $(this.element).attr("data-volume", targets[0]);
+            this.render(0);
         }
 
     }
