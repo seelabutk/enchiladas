@@ -183,15 +183,15 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         }
     }
 
-    if (lowquality)
+    if (lowquality == 1)
     {
         renderer[renderer_index]->cameraWidth = camera->imageWidth = 64;
         renderer[renderer_index]->cameraHeight = camera->imageHeight = 64;
     }
     else
     {
-        renderer[renderer_index]->cameraWidth = camera->imageWidth = config->imageWidth;
-        renderer[renderer_index]->cameraHeight = camera->imageHeight = config->imageHeight;
+        renderer[renderer_index]->cameraWidth = camera->imageWidth = std::min(config->imageWidth, lowquality);
+        renderer[renderer_index]->cameraHeight = camera->imageHeight = std::min(config->imageHeight, lowquality);
     }
 
 

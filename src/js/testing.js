@@ -7,29 +7,67 @@ Tester = function(configs)
     prevX = this.element.outerWidth() / 2.0;
     prevY = this.element.outerHeight() / 2.0;
     randy = new Chance();
+    GREM_COUNTER = 0;
     self = this;
+
+    path_index = 0;
+    spline_anchors = [
+        [self.element.outerWidth() / 2.0, self.element.outerHeight() / 2.0],
+        [Math.random() * self.element.outerWidth(), Math.random() * self.element.outerHeight()],
+        [Math.random() * self.element.outerWidth(), Math.random() * self.element.outerHeight()],
+        [Math.random() * self.element.outerWidth(), Math.random() * self.element.outerHeight()]
+    ];
+
+    spline_path = Smooth(spline_anchors, {
+        method: Smooth.METHOD_CUBIC,
+        clip: Smooth.CLIP_CLAMP,
+        cubicTension: Smooth.CUBIC_TENSION_CATMULL_ROM
+    });
+
     mouse_up_prob = 1.0;
     randy.pick = function()
     {
         var finish_move = Math.random();
+        GREM_COUNTER++;
+
+        // Mouse move has happened and we randomly choose to do a mouse up now
         if (state_machine_counter == 1 && finish_move < mouse_up_prob)
         {
             state_machine_counter = 2;
-            prevX = self.element.outerWidth() / 2.0;
-            prevY = self.element.outerHeight() / 2.0;
+            //prevX = self.element.outerWidth() / 2.0;
+            //prevY = self.element.outerHeight() / 2.0;
+            spline_anchors = [
+                [self.element.outerWidth() / 2.0, self.element.outerHeight() / 2.0],
+                [Math.random() * self.element.outerWidth(), Math.random() * self.element.outerHeight()],
+                [Math.random() * self.element.outerWidth(), Math.random() * self.element.outerHeight()],
+                [Math.random() * self.element.outerWidth(), Math.random() * self.element.outerHeight()]
+            ];
+
+            spline_path = Smooth(spline_anchors, {
+                method: Smooth.METHOD_CUBIC,
+                clip: Smooth.CLIP_CLAMP,
+                cubicTension: Smooth.CUBIC_TENSION_CATMULL_ROM
+            });
+            path_index = 0;
+
             mouse_up_prob = 0.01;
             return 'mouseup';
         }
-        else if (state_machine_counter == 1 && finish_move >= mouse_up_prob)
+
+        // Mouse move has happened and we'll continue with that
+        if (state_machine_counter == 1 && finish_move >= mouse_up_prob)
         {
             state_machine_counter = 1;
             return 'mousemove';
         }
+        // Mouse down has happened. Clearly mousemove is next.
         if (state_machine_counter == 0)
         {
             state_machine_counter = 1;
             return 'mousemove';
         }
+
+        // Mouse up happened and next comes mousedown
         if (state_machine_counter == 2)
         {
             state_machine_counter = 0;
@@ -54,13 +92,14 @@ Tester = function(configs)
             })
             .positionSelector(function(){
                 var offset = self.element.offset();
-                newPos = [prevX + ((Math.random() * 8) % self.element.outerWidth() - 4.0), 
+                /*newPos = [prevX + ((Math.random() * 8) % self.element.outerWidth() - 4.0), 
                     prevY + ((Math.random() * 8) % self.element.outerHeight() - 4.0)];
                 console.log(newPos);
                 prevX = newPos[0];
-                prevY = newPos[1];
+                prevY = newPos[1];*/
 
-                return [newPos[0] + offset.left, newPos[1] + offset.top];
+                path_index += 0.01;
+                return [spline_path(path_index)[0] + offset.left, spline_path(path_index)[1] + offset.top];
             })
             .randomizer(randy);
 
@@ -69,7 +108,6 @@ Tester = function(configs)
 
         horde.strategy(gremlins.strategies.distribution()
             .delay(8)
-            .distribution([0.33, 0.33, 0.33])
         );
         horde.after(function(){
             $(self.element).data("tapestry").getInteractionStats("http://accona.eecs.utk.edu:8080/");
@@ -78,9 +116,10 @@ Tester = function(configs)
         horde.unleash({nb: n_gremlins});
     }
 }
+getUrlParameter = null;
 $(document).ready(function(){
     
-  	function getUrlParameter(sParam) {
+  	getUrlParameter = function(sParam) {
         var sPageURL = decodeURIComponent(window.location.search.substring(1)),
             sURLVariables = sPageURL.split('&'),
             sParameterName,
