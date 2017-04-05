@@ -145,16 +145,19 @@ ArcBall.prototype = {
         this.zoomScale = this.position.elements[2];
     },
     
-    rotateByAngle: function(angle, axis)
+    rotateByAngle: function(angle, axis, original_position)
     {
+        var oldrot = this.ThisRot;
+        this.rotateTo($V(original_position));
         var x = axis == 'x' ? 1 : 0;
         var y = axis == 'y' ? 1 : 0;
         var z = axis == 'z' ? 1 : 0;
         var inRadians = angle * Math.PI / 180.0;
         var rotation = Matrix.Rotation(inRadians, Vector.create([x, y, z])).flatten();
         this.ThisRot = rotation;
-        var tmp = ArrayToSylvesterMatrix(this.ThisRot, 3)
-                    .x(ArrayToSylvesterMatrix(this.LastRot, 3));
+        this.LastRot = oldrot;//ArrayToSylvesterMatrix(oldrot, 3).x(ArrayToSylvesterMatrix(this.ThisRot, 3)).elements;
+        var tmp = ArrayToSylvesterMatrix(this.LastRot, 3)
+                    .x(ArrayToSylvesterMatrix(this.ThisRot, 3));
         this.ThisRot = SylvesterToArray(tmp);
 
         this.Transform = this.Transform.x(ArrayToSylvesterMatrix(SetRotationMatrixFrom3f(tmp), 4));
