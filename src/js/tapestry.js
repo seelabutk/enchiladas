@@ -329,7 +329,11 @@
     Tapestry.prototype.setup_handlers = function()
     {
         var self = this;
-        $(this.element).on("mousedown", function(){
+        $(this.element).on("mousedown", function(ev){
+            if (ev.which != 1)
+            {
+                return false;
+            }
             self.is_drag = true;
 
             self.camera.LastRot = self.camera.ThisRot;
