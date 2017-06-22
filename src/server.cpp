@@ -112,8 +112,6 @@ int main(int argc, const char **argv)
                 dataset.timeseries->setMaxMemory(30);
 
                 renderer = new pbnj::Renderer*[dataset.timeseries->getLength()];
-                std::cout<<dataset.timeseries->dataSize<<", "
-                    <<dataset.timeseries->maxVolumes<<", ";
                 for (int i = 0; i < dataset.timeseries->getLength(); i++)
                 {
                     renderer[i] = new pbnj::Renderer();
@@ -121,7 +119,6 @@ int main(int argc, const char **argv)
                     renderer[i]->setBackgroundColor(config->bgColor);
                     renderer[i]->setCamera(camera);
                 }
-                std::cout<<dataset.timeseries->currentVolumes<<std::endl;
             }
             else
             {
