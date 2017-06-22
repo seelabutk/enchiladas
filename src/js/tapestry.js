@@ -330,10 +330,10 @@
     {
         var self = this;
         $(this.element).on("mousedown", function(ev){
-            if (ev.which != 1)
+            /*if (ev.which != 1)
             {
                 return false;
-            }
+            }*/
             self.is_drag = true;
 
             self.camera.LastRot = self.camera.ThisRot;
