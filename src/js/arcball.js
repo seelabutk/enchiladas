@@ -101,6 +101,62 @@ ArcBall.prototype = {
        this.Transform.elements[3][3] = this.zoomScale;
     },
 
+    getAngles: function(dst_position){
+        this.LastRot   = [  1.0,  0.0,  0.0,                  // Last Rotation
+                           0.0,  1.0,  0.0,
+                           0.0,  0.0,  1.0 ];
+        var m = $M(this.Transform);
+        m = m.inverse();
+        
+        src_pos = $V(this.position.elements.slice(0, 3));
+        var temp = src_pos.elements;
+        var src_mag = Math.sqrt(temp[0] * temp[0] + temp[1] * temp[1] + temp[2] * temp[2]);
+
+        var dst_pos = dst_position;
+        temp = dst_pos.elements;
+        var dst_mag = Math.sqrt(temp[0] * temp[0] + temp[1] * temp[1] + temp[2] * temp[2]);
+
+        var normalized_src = src_pos.toUnitVector();
+        var normalized_dst = dst_pos.toUnitVector();
+        normalized_src = Vector.create([normalized_src.elements[0], normalized_src.elements[1], normalized_src.elements[2]]);
+        normalized_dst = Vector.create([normalized_dst.elements[0], normalized_dst.elements[1], normalized_dst.elements[2]]);
+
+        //Compute the vector perpendicular to the begin and end vectors
+        var Perp = cross(normalized_src.elements, normalized_dst.elements);
+
+        quat = [0.0, 0.0, 0.0, 0.0];
+        //Compute the length of the perpendicular vector
+        if (Vector3fLength(Perp) > 1.0e-5){//if its non-zero
+            //In the quaternion values, w is cosine (theta / 2), where theta is rotation angle
+            quat = [Perp[0],Perp[1],Perp[2],dot(normalized_src.elements, normalized_dst.elements)];
+        } 
+        
+        var x = quat[0];
+        var y = quat[1];
+        var z = quat[2];
+        var w = quat[3];
+        
+        ysqr = y*y;
+    
+        // roll
+        t0 = +2.0 * (w * x + y*z);
+        t1 = +1.0 - 2.0 * (x*x + ysqr);
+        var X = Math.atan2(t0, t1) * 180 / Math.PI;
+        
+        // pitch
+        t2 = +2.0 * (w*y - z*x);
+        t2 =  t2 > 1 ? 1 :t2;
+        t2 = t2 < -1 ? -1:t2;
+        var Y = Math.asin(t2) * 180 / Math.PI;
+        
+        // yaw
+        t3 = +2.0 * (w * z + x*y);
+        t4 = +1.0 - 2.0 * (ysqr + z*z);
+        var Z = Math.atan2(t3, t4) * 180 / Math.PI;
+
+        return [X, Y, Z];
+    },
+
     // Rotates to a position (4 element vector)
     rotateTo: function(pos)
     {
