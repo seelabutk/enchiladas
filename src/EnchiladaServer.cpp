@@ -117,6 +117,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         lowquality = request.param(":lowquality").as<int>();
     }
 
+    // Check if this dataset exists in the loaded datasets
     if (volume_map.count(dataset) == 0)
     {
         response.send(Http::Code::Not_Found, "Image does not exist");
@@ -131,6 +132,10 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     std::vector<unsigned char> png;
 
     int renderer_index = 0; // Equal to a valid timestep
+    bool onlysave = false;
+    std::string filename = "";
+    std::string save_filename;
+
     if (request.hasParam(":options"))
     {
         std::string options_line = request.param(":options").as<std::string>();
@@ -167,6 +172,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
                     renderer[0]->setSamples(8);
                 }
             }
+
             if (*it == "timestep")
             {
                 it++;
@@ -180,6 +186,26 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
                     std::cerr<<"Invalid timestep: "<<timestep<<std::endl;
                 }
             }
+
+            if (*it == "onlysave")
+            {
+                it++;
+                onlysave = true;
+                save_filename = *it;
+            }
+
+            if (*it == "filename")
+            {
+                it++;
+                filename = *it;
+                renderer_index = udataset.timeseries->getVolumeIndex(filename);
+                if (renderer_index == -1)
+                {
+                    response.send(Http::Code::Not_Found, "Image does not exist");
+                    return;
+                }        
+            }
+
         }
     }
 
@@ -198,11 +224,20 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     camera->setPosition(camera_x, camera_y, camera_z);
     camera->setUpVector(up_x, up_y, up_z);
 
-    renderer[renderer_index]->renderToPNGObject(png);
+    if (onlysave)
+    {
+        std::cout<<"Saving to "<<save_filename<<std::endl;
+        renderer[renderer_index]->renderImage("data/" + save_filename + ".png");
+        response.send(Http::Code::Ok, "saved");
+    }
+    else
+    {
+        renderer[renderer_index]->renderToPNGObject(png);
+        std::string png_data(png.begin(), png.end());
+        auto mime = Http::Mime::MediaType::fromString("image/png");
+        response.send(Http::Code::Ok, png_data, mime);
+    }
 
-    std::string png_data(png.begin(), png.end());
-    auto mime = Http::Mime::MediaType::fromString("image/png");
-    response.send(Http::Code::Ok, png_data, mime);
 }
 
 

@@ -81,6 +81,25 @@
         this.camera.zoomScale = this.camera.position.elements[2];
     }
 
+    Tapestry.prototype.getCameraInfo = function()
+    {
+        var m = $M(this.camera.Transform);
+        m = m.inverse();
+
+        var new_camera_position = m.multiply(this.camera.position);
+        var new_camera_up = m.multiply(this.camera.up);
+
+        var x = new_camera_position.elements[0];
+        var y = new_camera_position.elements[1];
+        var z = new_camera_position.elements[2];
+
+        var upx = new_camera_up.elements[0];
+        var upy = new_camera_up.elements[1];
+        var upz = new_camera_up.elements[2];
+
+        return { position: new_camera_position.elements, up: new_camera_up.elements };
+    }
+
     Tapestry.prototype.render = function(lowquality, remote_call)
     {
         if (typeof remote_call === 'undefined')
@@ -329,11 +348,7 @@
     Tapestry.prototype.setup_handlers = function()
     {
         var self = this;
-        $(this.element).on("mousedown", function(ev){
-            /*if (ev.which != 1)
-            {
-                return false;
-            }*/
+        $(this.element).on("mousedown", function(){
             self.is_drag = true;
 
             self.camera.LastRot = self.camera.ThisRot;
