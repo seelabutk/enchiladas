@@ -4,6 +4,7 @@ Tester = function(configs)
     state_machine_counter = 0;
     clickTypes = ['mousedown', 'mousemove', 'mouseup'];
     this.element = $(configs.element);
+    this.log_server = configs.log_server;
     prevX = this.element.outerWidth() / 2.0;
     prevY = this.element.outerHeight() / 2.0;
     randy = new Chance();
@@ -110,12 +111,13 @@ Tester = function(configs)
             .delay(8)
         );
         horde.after(function(){
-            $(self.element).data("tapestry").getInteractionStats("http://accona.eecs.utk.edu:8080/");
+            $(self.element).data("tapestry").getInteractionStats(self.log_server);
         });
 
         horde.unleash({nb: n_gremlins});
     }
 }
+
 getUrlParameter = null;
 $(document).ready(function(){
     
@@ -135,7 +137,7 @@ $(document).ready(function(){
     }; 
 
 	// Set up testing if needed
-	if (getUrlParameter("test"))
+	if (getUrlParameter("test") && getUrlParameter("log_server"))
     {
         setTimeout(function(){
             var random = Math.floor(Math.random() * 5);
@@ -143,7 +145,7 @@ $(document).ready(function(){
                 tester = new Tester({element: this});
                 tester.test();
             });*/
-            tester = new Tester({element: $(".hyperimage").get(random)});
+            tester = new Tester({element: $(".hyperimage").get(random), log_server: getUrlParameter("log_server")});
             tester.test(getUrlParameter("test"));
         }, 2000);
     }
