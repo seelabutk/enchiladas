@@ -139,7 +139,7 @@
         {
             quality = this.settings.width;
         }
-        var path = this.settings.host + "/image/" + dataset + "/" + x + "/" + y + "/" + z
+        var path = "image/" + dataset + "/" + x + "/" + y + "/" + z
             + "/" + upx + "/" + upy + "/" + upz + "/"
             + quality.toString() + "/" + options;
 
