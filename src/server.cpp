@@ -16,8 +16,25 @@
 #include <cstdlib>
 #include <map>
 #include <tuple>
+#include <csignal>
 
 using namespace Net;
+
+static volatile int doShutdown = 0;
+
+void sigintHandler(int sig) {
+  doShutdown = 1;
+}
+
+void waitForShutdown(ench::EnchiladaServer *ench) {
+  std::signal(SIGINT, sigintHandler);
+
+  while (!doShutdown) {
+    sleep(1);
+  }
+
+  ench->shutdown();
+}
 
 int main(int argc, const char **argv)
 {
@@ -139,8 +156,11 @@ int main(int argc, const char **argv)
 
     ench::EnchiladaServer eserver(addr, volume_map);
     eserver.init(1);
+
     eserver.start();
-    eserver.shutdown();
+
+    std::thread waitForShutdownThread(waitForShutdown, &eserver);
+    waitForShutdownThread.join();
 
     return 0;
 }
