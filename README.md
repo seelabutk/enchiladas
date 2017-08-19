@@ -1,6 +1,6 @@
 # Enchiladas
 
-A lightweight web-based viewer for OSPRay. For use with Tapestry (https://github.com/seelabutk/tapestry).
+A lightweight web-based viewer for OSPRay. 
 
 Currently depends on:
 
