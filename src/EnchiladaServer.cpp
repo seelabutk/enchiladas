@@ -40,7 +40,7 @@ void EnchiladaServer::start()
 {
     std::cout << "Listening..." << std::endl;
     this->httpEndpoint->setHandler(router.handler());
-    this->httpEndpoint->serve();
+    this->httpEndpoint->serveThreaded();
 }
 
 void EnchiladaServer::shutdown()
