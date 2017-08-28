@@ -131,30 +131,42 @@ ArcBall.prototype = {
             quat = [Perp[0],Perp[1],Perp[2],dot(normalized_src.elements, normalized_dst.elements)];
         } 
         
-        var x = quat[0];
-        var y = quat[1];
-        var z = quat[2];
-        var w = quat[3];
-        
-        ysqr = y*y;
-    
-        // roll
-        t0 = +2.0 * (w * x + y*z);
-        t1 = +1.0 - 2.0 * (x*x + ysqr);
-        var X = Math.atan2(t0, t1) * 180 / Math.PI;
-        
-        // pitch
-        t2 = +2.0 * (w*y - z*x);
-        t2 =  t2 > 1 ? 1 :t2;
-        t2 = t2 < -1 ? -1:t2;
-        var Y = Math.asin(t2) * 180 / Math.PI;
-        
-        // yaw
-        t3 = +2.0 * (w * z + x*y);
-        t4 = +1.0 - 2.0 * (ysqr + z*z);
-        var Z = Math.atan2(t3, t4) * 180 / Math.PI;
 
-        return [X, Y, Z];
+        q = {};
+        q.x = quat[0];
+        q.y = quat[1];
+        q.z = quat[2];
+        q.w = quat[3];
+        w2 = q.w*q.w;
+        x2 = q.x*q.x;
+        y2 = q.y*q.y;
+        z2 = q.z*q.z;
+        unitLength = w2 + x2 + y2 + z2;    // Normalised == 1, otherwise correction divisor.
+        abcd = q.w*q.x + q.y*q.z;
+        eps = 1e-7;    // TODO: pick from your math lib instead of hardcoding.
+        pi = Math.PI;   // TODO: pick from your math lib instead of hardcoding.
+        if (abcd > (0.5-eps)*unitLength)
+        {
+            yaw = 2 * Math.atan2(q.y, q.w);
+            pitch = pi;
+            roll = 0;
+        }
+        else if (abcd < (-0.5+eps)*unitLength)
+        {
+            yaw = -2 * Math.atan2(q.y, q.w);
+            pitch = -pi;
+            roll = 0;
+        }
+        else
+        {
+            adbc = q.w*q.z - q.x*q.y;
+            acbd = q.w*q.y - q.x*q.z;
+            yaw = Math.atan2(2*adbc, 1 - 2*(z2+x2));
+            pitch = Math.asin(2*abcd/unitLength);
+            roll = Math.atan2(2*acbd, 1 - 2*(y2+x2));
+        }
+
+        return {yaw: roll * 180 / Math.PI, pitch: pitch * 180 / Math.PI, roll: yaw * 180 / Math.PI};
     },
 
     // Rotates to a position (4 element vector)
@@ -211,7 +223,7 @@ ArcBall.prototype = {
         var inRadians = angle * Math.PI / 180.0;
         var rotation = Matrix.Rotation(inRadians, Vector.create([x, y, z])).flatten();
         this.ThisRot = rotation;
-        this.LastRot = oldrot;//ArrayToSylvesterMatrix(oldrot, 3).x(ArrayToSylvesterMatrix(this.ThisRot, 3)).elements;
+        this.LastRot = oldrot;
         var tmp = ArrayToSylvesterMatrix(this.LastRot, 3)
                     .x(ArrayToSylvesterMatrix(this.ThisRot, 3));
         this.ThisRot = SylvesterToArray(tmp);
