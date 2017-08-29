@@ -61,7 +61,7 @@ void EnchiladaServer::setupRoutes()
     Routes::Get(router, "/css/:filename",
             Routes::bind(&EnchiladaServer::handleCSS, this));
     // serving renders
-    Routes::Get(router, "/image/:dataset/:x/:y/:z/:upx/:upy/:upz/:lowquality/:options?",
+    Routes::Get(router, "/image/:dataset/:x/:y/:z/:upx/:upy/:upz/:vx/:vy/:vz/:lowquality/:options?",
             Routes::bind(&EnchiladaServer::handleImage, this));
 }
 
@@ -99,6 +99,10 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     float up_y = 1;
     float up_z = 0;
 
+    float view_x = 0;
+    float view_y = 0;
+    float view_z = 1;
+
     int lowquality = 0;
     std::string dataset = "";
 
@@ -113,6 +117,10 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         up_x = request.param(":upx").as<float>();
         up_y = request.param(":upy").as<float>();
         up_z = request.param(":upz").as<float>();
+
+        view_x = request.param(":vx").as<float>();
+        view_y = request.param(":vy").as<float>();
+        view_z = request.param(":vz").as<float>();
 
         lowquality = request.param(":lowquality").as<int>();
     }
@@ -223,6 +231,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
 
     camera->setPosition(camera_x, camera_y, camera_z);
     camera->setUpVector(up_x, up_y, up_z);
+    camera->setView(view_x, view_y, view_z);
 
     if (onlysave)
     {
