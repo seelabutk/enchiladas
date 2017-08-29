@@ -121,6 +121,10 @@
         var upy = new_camera_up.elements[1].toFixed(3);
         var upz = new_camera_up.elements[2].toFixed(3);
 
+        var viewx = -x;
+        var viewy = -y;
+        var viewz = -z;
+
         var dataset = $(this.element).attr("data-volume");
         
         var options = "";
@@ -141,6 +145,7 @@
         }
         var path = "image/" + dataset + "/" + x + "/" + y + "/" + z
             + "/" + upx + "/" + upy + "/" + upz + "/"
+            + viewx + "/" + viewy + "/" + viewz + "/"
             + quality.toString() + "/" + options;
 
         // Let's cache a bunch of the images so that requests
