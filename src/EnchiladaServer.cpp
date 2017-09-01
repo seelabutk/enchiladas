@@ -3,6 +3,8 @@
 #include <iostream>
 #include <cstdlib>
 #include <string>
+#include <memory>
+#include <stdexcept>
 
 #include "http.h"
 #include "router.h"
@@ -23,6 +25,18 @@ EnchiladaServer::EnchiladaServer(Net::Address addr, std::map<std::string,
         ench::pbnj_container> vm):  
     httpEndpoint(std::make_shared<Net::Http::Endpoint>(addr)), volume_map(vm)
 {
+}
+
+std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) throw std::runtime_error("popen() failed!");
+    while (!feof(pipe.get())) {
+        if (fgets(buffer.data(), 128, pipe.get()) != NULL)
+            result += buffer.data();
+    }
+    return result;
 }
 
 void EnchiladaServer::init(size_t threads)
@@ -63,6 +77,10 @@ void EnchiladaServer::setupRoutes()
     // serving renders
     Routes::Get(router, "/image/:dataset/:x/:y/:z/:upx/:upy/:upz/:lowquality/:options?",
             Routes::bind(&EnchiladaServer::handleImage, this));
+    // routing to plugins
+    Routes::Get(router, "/extern/:plugin/:args?", 
+            Routes::bind(&EnchiladaServer::handleExternalCommand, this));
+
 }
 
 void EnchiladaServer::handleRoot(const Rest::Request &request,
@@ -85,6 +103,22 @@ void EnchiladaServer::handleCSS(const Rest::Request &request,
     auto filename = request.param(":filename").as<std::string>();
     filename = "css/" + filename;
     Http::serveFile(response, filename.c_str());
+}
+
+void EnchiladaServer::handleExternalCommand(const Rest::Request &request, 
+        Net::Http::ResponseWriter response)
+{
+    std::string program = request.param(":plugin").as<std::string>();
+    std::string args = "";
+
+    if (request.hasParam(":args"))
+    {
+        args = request.param(":args").as<std::string>(); 
+    }
+
+    std::string command = "./plugins/" + program + " " + args;
+    std::string json_results = exec(command.c_str());
+    response.send(Http::Code::Ok, json_results);
 }
 
 void EnchiladaServer::handleImage(const Rest::Request &request,

@@ -45,6 +45,8 @@ namespace ench {
                     Net::Http::ResponseWriter response);
             void handleImage(const Rest::Request &request,
                     Net::Http::ResponseWriter response);
+            void handleExternalCommand(const Rest::Request &request,
+                    Net::Http::ResponseWriter response);
 
             std::shared_ptr<Net::Http::Endpoint> httpEndpoint;
             Rest::Router router;

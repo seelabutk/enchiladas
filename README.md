@@ -15,3 +15,10 @@ Currently depends on:
 - Make a build directory in the root and run `cmake ../` inside it.
 - Run ccmake . and set the ospray build directory (e.g. ~/ospray/1.1.0/build).
 - Configure and make.
+
+## Plugins
+
+At the moment, you can use the Enchiladas HTTP server for running custom scripts and programs through the `extern` request. 
+A request such as `/extern/foo/bar` runs the program `foo` in the `plugins` directory with arguments `bar`. The results are then routed back to the client. 
+
+If the `plugins` directory doesn't exist, you can create it in your `build` directory. Make sure that your plugin programs are executable before using them. 
