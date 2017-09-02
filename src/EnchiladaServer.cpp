@@ -6,9 +6,10 @@
 #include <memory>
 #include <stdexcept>
 
-#include "http.h"
-#include "router.h"
-#include "endpoint.h"
+#include "pistache/http.h"
+#include "pistache/router.h"
+#include "pistache/endpoint.h"
+#include "pistache/client.h"
 
 #include "pbnj.h"
 #include "Camera.h"
@@ -19,11 +20,11 @@
 
 namespace ench {
 
-using namespace Net;
+using namespace Pistache;
 
-EnchiladaServer::EnchiladaServer(Net::Address addr, std::map<std::string, 
+EnchiladaServer::EnchiladaServer(Pistache::Address addr, std::map<std::string, 
         ench::pbnj_container> vm):  
-    httpEndpoint(std::make_shared<Net::Http::Endpoint>(addr)), volume_map(vm)
+    httpEndpoint(std::make_shared<Pistache::Http::Endpoint>(addr)), volume_map(vm)
 {
 }
 
@@ -41,9 +42,9 @@ std::string exec(const char* cmd) {
 
 void EnchiladaServer::init(size_t threads)
 {
-    auto opts = Net::Http::Endpoint::options()
+    auto opts = Pistache::Http::Endpoint::options()
         .threads(threads)
-        .flags(Net::Tcp::Options::InstallSignalHandler);
+        .flags(Pistache::Tcp::Options::InstallSignalHandler);
 
     this->httpEndpoint->init(opts);
 
@@ -65,7 +66,7 @@ void EnchiladaServer::shutdown()
 
 void EnchiladaServer::setupRoutes()
 {
-    using namespace Net::Rest;
+    using namespace Pistache::Rest;
     // serving html files
     Routes::Get(router, "/", Routes::bind(&EnchiladaServer::handleRoot, this));
     // serving static js files
@@ -84,13 +85,13 @@ void EnchiladaServer::setupRoutes()
 }
 
 void EnchiladaServer::handleRoot(const Rest::Request &request,
-        Net::Http::ResponseWriter response)
+        Pistache::Http::ResponseWriter response)
 {
     Http::serveFile(response, "index.html");
 }
 
 void EnchiladaServer::handleJS(const Rest::Request &request, 
-        Net::Http::ResponseWriter response)
+        Pistache::Http::ResponseWriter response)
 {
     auto filename = request.param(":filename").as<std::string>();
     filename = "js/" + filename;
@@ -98,7 +99,7 @@ void EnchiladaServer::handleJS(const Rest::Request &request,
 }
 
 void EnchiladaServer::handleCSS(const Rest::Request &request, 
-        Net::Http::ResponseWriter response)
+        Pistache::Http::ResponseWriter response)
 {
     auto filename = request.param(":filename").as<std::string>();
     filename = "css/" + filename;
@@ -106,7 +107,7 @@ void EnchiladaServer::handleCSS(const Rest::Request &request,
 }
 
 void EnchiladaServer::handleExternalCommand(const Rest::Request &request, 
-        Net::Http::ResponseWriter response)
+        Pistache::Http::ResponseWriter response)
 {
     std::string program = request.param(":plugin").as<std::string>();
     std::string args = "";
@@ -122,7 +123,7 @@ void EnchiladaServer::handleExternalCommand(const Rest::Request &request,
 }
 
 void EnchiladaServer::handleImage(const Rest::Request &request,
-        Net::Http::ResponseWriter response)
+        Pistache::Http::ResponseWriter response)
 {
 
     int camera_x = 0;
@@ -177,6 +178,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     bool onlysave = false;
     std::string filename = "";
     std::string save_filename;
+    std::vector<std::string> filters; // If any image filters are specified, we'll put them here
 
     if (request.hasParam(":options"))
     {
@@ -248,6 +250,21 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
                 }        
             }
 
+            if (*it == "filters")
+            {
+                it++;
+                std::string filter_names = *it;
+                
+                // parse the filter names and apply them one by one
+                const char *filters_chars = filter_names.c_str();
+                do {
+                    const char* filter_begin = filters_chars;
+                    while(*filters_chars != '-' && *filters_chars)
+                        filters_chars++;
+                    filters.push_back(std::string(filter_begin, filters_chars));
+                } while(0 != *filters_chars++);
+
+            }
         }
     }
 
@@ -267,8 +284,10 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     camera->setUpVector(up_x, up_y, up_z);
     camera->setView(view_x, view_y, view_z);
 
+
     if (onlysave)
     {
+        // no filters are supported for the onlysave option at the moment
         std::cout<<"Saving to "<<save_filename<<std::endl;
         renderer[renderer_index]->renderImage("data/" + save_filename + ".png");
         response.send(Http::Code::Ok, "saved");
@@ -277,6 +296,34 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     {
         renderer[renderer_index]->renderToPNGObject(png);
         std::string png_data(png.begin(), png.end());
+
+        std::vector<Async::Promise<Http::Response>> responses;
+		Http::Client client;
+		auto options = Http::Client::options()
+			.threads(1)
+			.maxConnectionsPerHost(8);
+		client.init(options);
+
+        // apply the filters if any 
+        for (auto it = filters.begin(); it != filters.end(); it++)
+        {
+            std::string filter = *it;
+
+
+            auto resp = client.get("http://accona.eecs.utk.edu:8050/" + filter).send();
+            std::cout<<"wjha"<<std::endl;
+            resp.then([&](Http::Response response)
+                    {
+                        std::cout<<"Got a response"<<std::endl;
+                    }, Async::IgnoreException);
+
+			responses.push_back(std::move(resp));
+        }
+        auto sync = Async::whenAll(responses.begin(), responses.end());
+        Async::Barrier<std::vector<Http::Response>> barrier(sync);
+        barrier.wait_for(std::chrono::seconds(5));
+        client.shutdown();
+
         auto mime = Http::Mime::MediaType::fromString("image/png");
         response.send(Http::Code::Ok, png_data, mime);
     }

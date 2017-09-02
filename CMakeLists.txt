@@ -14,7 +14,7 @@ FILE(GLOB SOURCES "src/*.cpp")
 
 ADD_EXECUTABLE(server ${SOURCES})
 
-TARGET_LINK_LIBRARIES(server pbnj net) 
+TARGET_LINK_LIBRARIES(server pbnj pistache) 
 
 # Copy the index.html code whenever enchiladas gets built
 ADD_CUSTOM_COMMAND(TARGET server PRE_BUILD

@@ -1,6 +1,6 @@
 # Enchiladas
 
-A lightweight web-based viewer for OSPRay.
+A lightweight web-based platform for OSPRay renderer, built on top of the PBNJ library.
 
 Currently depends on:
 

@@ -18,7 +18,7 @@
 #include <tuple>
 #include <csignal>
 
-using namespace Net;
+using namespace Pistache;
 
 static volatile int doShutdown = 0;
 
@@ -149,10 +149,10 @@ int main(int argc, const char **argv)
         }
     }
 
-    Net::Port port(9080);
+    Pistache::Port port(9080);
     port = std::stol(argv[2]);
 
-    Net::Address addr(Net::Ipv4::any(), port);
+    Pistache::Address addr(Pistache::Ipv4::any(), port);
 
     ench::EnchiladaServer eserver(addr, volume_map);
     eserver.init(1);

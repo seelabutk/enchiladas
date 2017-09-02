@@ -9,12 +9,12 @@
 #include "Camera.h"
 #include "TimeSeries.h"
 
-#include "http.h"
-#include "router.h"
-#include "endpoint.h"
+#include "pistache/http.h"
+#include "pistache/router.h"
+#include "pistache/endpoint.h"
 
 namespace ench {
-    using namespace Net;
+    using namespace Pistache;
 
     union Dataset
     {
@@ -28,7 +28,7 @@ namespace ench {
     class EnchiladaServer 
     {
         public:
-            EnchiladaServer(Net::Address addr, std::map<std::string, pbnj_container> vm);
+            EnchiladaServer(Pistache::Address addr, std::map<std::string, pbnj_container> vm);
 
             void init(size_t threads=2);
             void start();
@@ -38,17 +38,17 @@ namespace ench {
 
             void setupRoutes();
             void handleRoot(const Rest::Request &request,
-                    Net::Http::ResponseWriter response);
+                    Pistache::Http::ResponseWriter response);
             void handleJS(const Rest::Request &request, 
-                    Net::Http::ResponseWriter response);
+                    Pistache::Http::ResponseWriter response);
             void handleCSS(const Rest::Request &request, 
-                    Net::Http::ResponseWriter response);
+                    Pistache::Http::ResponseWriter response);
             void handleImage(const Rest::Request &request,
-                    Net::Http::ResponseWriter response);
+                    Pistache::Http::ResponseWriter response);
             void handleExternalCommand(const Rest::Request &request,
-                    Net::Http::ResponseWriter response);
+                    Pistache::Http::ResponseWriter response);
 
-            std::shared_ptr<Net::Http::Endpoint> httpEndpoint;
+            std::shared_ptr<Pistache::Http::Endpoint> httpEndpoint;
             Rest::Router router;
 
             std::map<std::string, pbnj_container> volume_map;
