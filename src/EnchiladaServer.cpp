@@ -1,10 +1,14 @@
 #include "EnchiladaServer.h"
+#include "utils.h"
 
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include <string>
 #include <memory>
 #include <stdexcept>
+#include <stdio.h>
+#include <unistd.h>
 
 #include "pistache/http.h"
 #include "pistache/router.h"
@@ -26,18 +30,6 @@ EnchiladaServer::EnchiladaServer(Pistache::Address addr, std::map<std::string,
         ench::pbnj_container> vm):  
     httpEndpoint(std::make_shared<Pistache::Http::Endpoint>(addr)), volume_map(vm)
 {
-}
-
-std::string exec(const char* cmd) {
-    std::array<char, 128> buffer;
-    std::string result;
-    std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
-    if (!pipe) throw std::runtime_error("popen() failed!");
-    while (!feof(pipe.get())) {
-        if (fgets(buffer.data(), 128, pipe.get()) != NULL)
-            result += buffer.data();
-    }
-    return result;
 }
 
 void EnchiladaServer::init(size_t threads)
@@ -297,11 +289,12 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         renderer[renderer_index]->renderToPNGObject(png);
         std::string png_data(png.begin(), png.end());
 
+        /*
         std::vector<Async::Promise<Http::Response>> responses;
 		Http::Client client;
 		auto options = Http::Client::options()
-			.threads(1)
-			.maxConnectionsPerHost(8);
+			.threads(10)
+			.maxConnectionsPerHost(20);
 		client.init(options);
 
         // apply the filters if any 
@@ -309,13 +302,14 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         {
             std::string filter = *it;
 
-
-            auto resp = client.get("http://accona.eecs.utk.edu:8050/" + filter).send();
-            std::cout<<"wjha"<<std::endl;
-            resp.then([&](Http::Response response)
-                    {
-                        std::cout<<"Got a response"<<std::endl;
-                    }, Async::IgnoreException);
+            auto request_builder = client.post("http://accona.eecs.utk.edu:8050/" + filter);
+            auto resp = request_builder.body(png_data).send();
+            std::cout<<"Request sent"<<std::endl;
+            resp.then([&](Http::Response filter_response) {
+                auto mime = Http::Mime::MediaType::fromString("image/png");
+                response.send(Http::Code::Ok, filter_response.body(), mime);
+                std::cout<<"Got response"<<std::endl;
+            }, Async::IgnoreException);
 
 			responses.push_back(std::move(resp));
         }
@@ -323,9 +317,20 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         Async::Barrier<std::vector<Http::Response>> barrier(sync);
         barrier.wait_for(std::chrono::seconds(5));
         client.shutdown();
+        */
+
+
+        for (auto it = filters.begin(); it != filters.end(); it++)
+        {
+            std::string filter = *it;
+            filter = "./plugins/" + filter;
+            std::string filtered_data;
+            png_data = exec_filter(filter.c_str(), png_data);
+        }
 
         auto mime = Http::Mime::MediaType::fromString("image/png");
         response.send(Http::Code::Ok, png_data, mime);
+
     }
 
 }
