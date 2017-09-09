@@ -54,7 +54,12 @@ int main(int argc, const char **argv)
 
     // Variables for parsing the directory files
     std::string config_dir = argv[1];
-    DIR *directory = opendir(config_dir.c_str());
+    DIR *directory;
+    if ((directory = opendir(config_dir.c_str())) == NULL)
+    {
+        std::cerr<<"Could not open configuration directory"<<std::endl;
+        exit(-1);
+    }
     struct dirent *dirp;
 
     /*
