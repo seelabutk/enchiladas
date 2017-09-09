@@ -87,14 +87,12 @@ namespace ench {
         return filtered_data;
     }
 
-    std::string exec(const char* cmd, std::string data) 
+    std::string exec(const char* cmd) 
     {
         std::array<char, 128> buffer;
         std::string result;
-        std::shared_ptr<FILE> pipe(popen(cmd, "w"), pclose);
+        std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
         if (!pipe) throw std::runtime_error("popen() failed!");
-        fputs(data.c_str(), pipe.get());
-        fputs("\0", pipe.get());
         while (!feof(pipe.get())) {
             if (fgets(buffer.data(), 128, pipe.get()) != NULL)
                 result += buffer.data();
