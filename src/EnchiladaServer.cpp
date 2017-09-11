@@ -60,7 +60,7 @@ void EnchiladaServer::setupRoutes()
 {
     using namespace Pistache::Rest;
     // serving html files
-    Routes::Get(router, "/", Routes::bind(&EnchiladaServer::handleRoot, this));
+    Routes::Get(router, "/:filename?", Routes::bind(&EnchiladaServer::handleRoot, this));
     // serving static js files
     Routes::Get(router, "/js/:filename", 
             Routes::bind(&EnchiladaServer::handleJS, this));
@@ -79,7 +79,12 @@ void EnchiladaServer::setupRoutes()
 void EnchiladaServer::handleRoot(const Rest::Request &request,
         Pistache::Http::ResponseWriter response)
 {
-    Http::serveFile(response, "index.html");
+    std::string filename = "index.html"; // default root
+    if (request.hasParam(":filename"))
+    {
+        filename = request.param(":filename").as<std::string>();
+    }
+    Http::serveFile(response, filename.c_str());
 }
 
 void EnchiladaServer::handleJS(const Rest::Request &request, 
