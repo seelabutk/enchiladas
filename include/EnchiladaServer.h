@@ -30,13 +30,15 @@ namespace ench {
         public:
             EnchiladaServer(Pistache::Address addr, std::map<std::string, pbnj_container> vm);
 
-            void init(size_t threads=2);
+            void init(std::string app_dir, size_t threads=2);
             void start();
             void shutdown();
 
         private:
 
             void setupRoutes();
+            void serveFile(Pistache::Http::ResponseWriter &response,
+                    std::string filename);
             void handleRoot(const Rest::Request &request,
                     Pistache::Http::ResponseWriter response);
             void handleJS(const Rest::Request &request, 
@@ -50,8 +52,8 @@ namespace ench {
 
             std::shared_ptr<Pistache::Http::Endpoint> httpEndpoint;
             Rest::Router router;
-
             std::map<std::string, pbnj_container> volume_map;
+            std::string app_dir;
     };
 }
 

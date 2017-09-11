@@ -32,13 +32,14 @@ EnchiladaServer::EnchiladaServer(Pistache::Address addr, std::map<std::string,
 {
 }
 
-void EnchiladaServer::init(size_t threads)
+void EnchiladaServer::init(std::string app_dir, size_t threads)
 {
     auto opts = Pistache::Http::Endpoint::options()
         .threads(threads)
         .flags(Pistache::Tcp::Options::InstallSignalHandler);
 
     this->httpEndpoint->init(opts);
+    this->app_dir = app_dir;
 
     setupRoutes();
 }
@@ -76,6 +77,21 @@ void EnchiladaServer::setupRoutes()
 
 }
 
+void EnchiladaServer::serveFile(Pistache::Http::ResponseWriter &response,
+        std::string filename)
+{
+    try
+    {
+        Http::serveFile(response, filename.c_str());
+    }
+    catch(...)
+    {
+        std::string app_path = this->app_dir + "/" + filename;
+        Http::serveFile(response, app_path.c_str());
+    }
+}
+
+
 void EnchiladaServer::handleRoot(const Rest::Request &request,
         Pistache::Http::ResponseWriter response)
 {
@@ -84,7 +100,7 @@ void EnchiladaServer::handleRoot(const Rest::Request &request,
     {
         filename = request.param(":filename").as<std::string>();
     }
-    Http::serveFile(response, filename.c_str());
+    serveFile(response, filename.c_str());
 }
 
 void EnchiladaServer::handleJS(const Rest::Request &request, 
@@ -92,7 +108,7 @@ void EnchiladaServer::handleJS(const Rest::Request &request,
 {
     auto filename = request.param(":filename").as<std::string>();
     filename = "js/" + filename;
-    Http::serveFile(response, filename.c_str());
+    serveFile(response, filename.c_str());
 }
 
 void EnchiladaServer::handleCSS(const Rest::Request &request, 
@@ -100,7 +116,7 @@ void EnchiladaServer::handleCSS(const Rest::Request &request,
 {
     auto filename = request.param(":filename").as<std::string>();
     filename = "css/" + filename;
-    Http::serveFile(response, filename.c_str());
+    serveFile(response, filename.c_str());
 }
 
 void EnchiladaServer::handleExternalCommand(const Rest::Request &request, 

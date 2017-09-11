@@ -41,15 +41,22 @@ int main(int argc, const char **argv)
     /*
      * Check the input parameters
      */
-    if (argc != 3)
+    if (argc != 3 && argc != 4)
     {
         std::cerr << "Usage: " 
             << argv[0] 
-            << " <configuration directory> " 
-            << "<port>";
+            << " <configuration directory>" 
+            << " <port>"
+            << " [application directory]";
 
         std::cerr << std::endl;
         return 1;
+    }
+
+    std::string app_dir = ".";
+    if (argc == 4)
+    {
+        app_dir = argv[3];
     }
 
     // Variables for parsing the directory files
@@ -160,7 +167,7 @@ int main(int argc, const char **argv)
     Pistache::Address addr(Pistache::Ipv4::any(), port);
 
     ench::EnchiladaServer eserver(addr, volume_map);
-    eserver.init(1);
+    eserver.init(app_dir, 1);
 
     eserver.start();
 
