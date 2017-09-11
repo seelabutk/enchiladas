@@ -130,7 +130,7 @@ void EnchiladaServer::handleExternalCommand(const Rest::Request &request,
         args = request.param(":args").as<std::string>(); 
     }
 
-    std::string command = "./plugins/" + program + " " + args;
+    std::string command = this->app_dir + "/plugins/" + program + " " + args;
     std::string json_results = exec(command.c_str());
     response.send(Http::Code::Ok, json_results);
 }
@@ -344,7 +344,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         for (auto it = filters.begin(); it != filters.end(); it++)
         {
             std::string filter = *it;
-            filter = "./plugins/" + filter;
+            filter = this->app_dir + "/plugins/" + filter;
             std::string filtered_data;
             png_data = exec_filter(filter.c_str(), png_data);
         }
