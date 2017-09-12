@@ -23,6 +23,8 @@ Tools = {
                 var host = "/image/" + dataset + "/" + position[0].toFixed(3) 
                     + "/" + position[1].toFixed(3) + "/" + position[2].toFixed(3)
                     + "/" + up[0].toFixed(3) + "/" + up[1].toFixed(3) + "/" + up[2].toFixed(3)
+                    + "/" + (-position[0]).toFixed(3) + "/" + (-position[1]).toFixed(1)
+                    + "/" + (-position[2]).toFixed(3) 
                     + "/" + "512/onlysave," + filename + ",filename," + filename;
                 $.ajax({
                     url: host,
@@ -60,6 +62,8 @@ Tools = {
                     var host = "/image/" + dataset + "/" + position[0].toFixed(3)
                     + "/" + position[1].toFixed(3) + "/" + position[2].toFixed(3)
                     + "/" + up[0].toFixed(3) + "/" + up[1].toFixed(3) + "/" + up[2].toFixed(3)
+                    + "/" + (-position[0]).toFixed(3) + "/" + (-position[1]).toFixed(1)
+                    + "/" + (-position[2]).toFixed(3) 
                     + "/" + "512/onlysave," + filename;
                     $.ajax({
                         url: host,
