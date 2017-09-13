@@ -121,6 +121,7 @@ int main(int argc, const char **argv)
                 renderer[0]->setVolume(dataset.volume);
                 renderer[0]->setBackgroundColor(config->bgColor);
                 renderer[0]->setCamera(camera);
+                renderer[0]->setSamples(config->samples);
             }
             /*
              * If we have a time series
@@ -147,6 +148,7 @@ int main(int argc, const char **argv)
                     renderer[i]->setVolume(dataset.timeseries->getVolume(i));
                     renderer[i]->setBackgroundColor(config->bgColor);
                     renderer[i]->setCamera(camera);
+                    renderer[i]->setSamples(config->samples);
                 }
             }
             else
