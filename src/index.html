@@ -2,10 +2,16 @@
     <head>
         <title>Tapestry</title>
         <link rel="stylesheet" href="css/style.css">
+
+        <!-- jQuery dependency -->
         <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+
+        <!-- For testing -->
         <script src="js/smooth.js"></script>
         <script src="js/gremlins.min.js"></script>
         <script src="js/testing.js"></script>
+
+        <!-- Core Tapestry JS -->
         <script src="js/tools.js"></script>
         <script src="js/sylvester.js"></script>
         <script src="js/math.js"></script>
@@ -14,14 +20,11 @@
         <script src="js/main.js"></script>
     </head>
     <body>
-        <img class="hyperimage" data-volume="jet" src="/image" width="250" height="250"/>    
-        <img class="hyperimage" id="teapot" style="right: inherit; top: inherit;" data-volume="teapot" src="/image" width="250" height="250"/>    
-        <img class="hyperimage" id="mag" style="right: inherit; bottom: inherit;" data-volume="magnetic" src="/image" width="250" height="250"/>    
-        <img class="hyperimage" style="left: inherit; top: inherit;" data-volume="supernova" src="/image" width="250" height="250"/>    
-        <img class="hyperimage" id="turbulence" style="left: inherit; bottom: inherit;" data-volume="turbulence" src="/image" width="250" height="250"/>    
+        <img class="hyperimage" id="teapot" data-volume="teapot" />    
+        <img class="hyperimage" id="turbulence" data-volume="turbulence" />    
 
-        <a class="hyperaction" href="#" for="mag" data-action="position=-100,10,800">Move dat data</a>
-        <a class="hyperaction" href="#" for="mag" data-action="link(teapot)">Link them</a>
-        <a class="hyperaction" href="#" for="mag" data-action="unlink(teapot)">Unlink them</a>
+        <a class="hyperaction" href="#" for="turbulence" data-action="position=-100,10,800">Set camera</a>
+        <a class="hyperaction" href="#" for="turbulence" data-action="link(teapot)">Link</a>
+        <a class="hyperaction" href="#" for="turbulence" data-action="unlink(teapot)">Unlink</a>
     </body>
 </html>
