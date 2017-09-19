@@ -140,7 +140,7 @@ $(document).ready(function(){
 	if (getUrlParameter("test") && getUrlParameter("log_server"))
     {
         setTimeout(function(){
-            var random = Math.floor(Math.random() * 5);
+            var random = Math.floor(Math.random() * $(".hyperimage").length);
             /*$(".tapestry").eq(random).each(function(){
                 tester = new Tester({element: this});
                 tester.test();
