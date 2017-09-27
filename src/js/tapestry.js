@@ -125,7 +125,7 @@
         var viewy = -y;
         var viewz = -z;
 
-        var dataset = $(this.element).attr("data-volume");
+        var dataset = $(this.element).attr("data-dataset");
         
         var options = "";
         if ($(this.element).attr("data-colormap"))
@@ -344,7 +344,7 @@
             var targets = action.slice(operator_index + 1);
             targets = targets.replace(/\(|\)| /g, "");
             targets = targets.split(",");
-            $(this.element).attr("data-volume", targets[0]);
+            $(this.element).attr("data-dataset", targets[0]);
             this.render(0);
         }
 
