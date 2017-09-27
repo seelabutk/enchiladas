@@ -36,13 +36,12 @@ ADD_CUSTOM_COMMAND(TARGET server PRE_BUILD
 
 if (ENABLE_MINIFY)
     ADD_CUSTOM_COMMAND(TARGET server PRE_BUILD
-        COMMAND uglifyjs 
+        COMMAND cat 
         ${CMAKE_CURRENT_BINARY_DIR}/js/tools.js 
         ${CMAKE_CURRENT_BINARY_DIR}/js/sylvester.js 
         ${CMAKE_CURRENT_BINARY_DIR}/js/math.js 
         ${CMAKE_CURRENT_BINARY_DIR}/js/arcball.js 
         ${CMAKE_CURRENT_BINARY_DIR}/js/tapestry.js 
-        --output ${CMAKE_CURRENT_BINARY_DIR}/js/tapestry.min.js 
-        --compress 
+        | python -m rjsmin > ${CMAKE_CURRENT_BINARY_DIR}/js/tapestry.min.js
         COMMENT "Minifying JS code using UglifyJS") 
 endif()
