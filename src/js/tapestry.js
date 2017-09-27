@@ -143,7 +143,14 @@
         {
             quality = this.settings.width;
         }
-        var path = "image/" + dataset + "/" + x + "/" + y + "/" + z
+
+        var host = "";
+        if (this.settings.host !== undefined)
+        {
+            host = this.settings.host + "/";
+        }
+
+        var path = host + "image/" + dataset + "/" + x + "/" + y + "/" + z
             + "/" + upx + "/" + upy + "/" + upz + "/"
             + viewx + "/" + viewy + "/" + viewz + "/"
             + quality.toString() + "/" + options;
