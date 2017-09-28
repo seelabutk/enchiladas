@@ -450,9 +450,10 @@
          */
         $(this.element).on("touchstart", function(event){
             self.is_drag = true;
+            console.log("touchstart");
 
             //update the base rotation so model doesn't jerk around upon new clicks
-            self.camera.LastRot = this.camera.ThisRot;
+            self.camera.LastRot = self.camera.ThisRot;
 
             //tell the camera where the touch event happened
             self.camera.click(event.originalEvent.touches[0].clientX - 
@@ -464,6 +465,7 @@
 
         //handle touchEnd
         $(this.element).on("touchend", function(event){
+            console.log("touchend");
             self.is_drag = false;
 
             self.render(0);
@@ -472,6 +474,7 @@
 
         //handle touch movement
         $(this.element).on("touchmove", function(event){
+            console.log("touchmove");
             if (self.is_drag == true)
             {
                 mouse_x = event.originalEvent.touches[0].clientX - self.element.getBoundingClientRect().left;
