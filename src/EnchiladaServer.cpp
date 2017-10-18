@@ -189,9 +189,11 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
 
     int renderer_index = 0; // Equal to a valid timestep
     bool onlysave = false;
+    bool do_isosurface = false;
     std::string filename = "";
     std::string save_filename;
     std::vector<std::string> filters; // If any image filters are specified, we'll put them here
+    std::vector<float> isovalues; // In case isosurfacing is supported
 
     if (request.hasParam(":options"))
     {
@@ -209,6 +211,23 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
 
         for (auto it = options.begin(); it != options.end(); it++)
         {
+            if (*it == "isosurface")
+            {
+                it++; // Get the isovalues
+                std::string isovalues_str = *it;
+                
+                // parse the isovalues
+                const char *isovalues_char = isovalues_str.c_str();
+                do {
+                    const char* iso_begin = isovalues_char;
+                    while(*isovalues_char != '-' && *isovalues_char)
+                        isovalues_char++;
+                    isovalues.push_back(std::stof(std::string(iso_begin, isovalues_char)));
+                } while(0 != *isovalues_char++);
+
+                do_isosurface = true;
+            }
+
             if (*it == "colormap")
             {
                 it++; // Get the value of the colormap
@@ -307,6 +326,15 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     }
     else
     {
+        if (do_isosurface)
+        {
+            renderer[renderer_index]->setIsosurface(udataset.volume, isovalues);
+        }
+        else
+        {
+            renderer[renderer_index]->setVolume(udataset.volume);
+        }
+
         renderer[renderer_index]->renderToPNGObject(png);
         std::string png_data(png.begin(), png.end());
 

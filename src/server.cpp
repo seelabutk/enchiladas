@@ -100,6 +100,11 @@ int main(int argc, const char **argv)
             pbnj::CONFSTATE single_multi = config->getConfigState();
             ench::Dataset dataset;
 
+            // centerView has to be called before setCamera because the light position
+            // depends on it. 
+            camera->setPosition(config->cameraX, config->cameraY, config->cameraZ);
+            camera->centerView();
+
             /*
              * If we have a single volume at hand
              */
@@ -157,7 +162,6 @@ int main(int argc, const char **argv)
                 continue;
             }
 
-            camera->setPosition(config->cameraX, config->cameraY, config->cameraZ);
             volume_map[filename.substr(0, index)] = std::make_tuple(config, 
                     dataset, camera, renderer);
         }

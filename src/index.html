@@ -24,10 +24,14 @@
     </head>
     <body>
         <img class="hyperimage" id="teapot" data-dataset="teapot" />    
-        <img class="hyperimage" id="turbulence" data-dataset="turbulence" />    
+        <img class="hyperimage" id="turbulence" data-dataset="turbulence" data-isovalues="1"/>    
 
         <a class="hyperaction" href="#" for="turbulence" data-action="position=-100,10,800">Set camera</a>
         <a class="hyperaction" href="#" for="turbulence" data-action="link(teapot)">Link</a>
         <a class="hyperaction" href="#" for="turbulence" data-action="unlink(teapot)">Unlink</a>
+
+        <br>
+        Isosurface threshold
+        <input class="threshold-slider" type="range" min=1 max=30>
     </body>
 </html>

@@ -57,18 +57,26 @@
         $(this.element).css("width", this.settings.width.toString() + "px");
         $(this.element).css("height", this.settings.height.toString() + "px");
 
-        // First render
-        this.setup_camera();
-        this.setup_handlers();
-        $(this.element).mousedown();
-        $(this.element).mouseup();
-
         if ($(this.element).attr("data-timerange"))
         {
             var range = $(this.element).attr("data-timerange").split("..");
             this.timerange[0] = parseInt(range[0]);
             this.timerange[1] = parseInt(range[1]);
         }
+
+        if ($(this.element).attr("data-isovalues"))
+        {
+            this.settings.do_isosurface = true;
+            this.settings.isovalues = 
+                $(this.element).attr("data-isovalues")
+                .split(",").map(function(i){return parseFloat(i)});
+        }
+
+        // First render
+        this.setup_camera();
+        this.setup_handlers();
+        $(this.element).mousedown();
+        $(this.element).mouseup();
     }
 
     Tapestry.prototype.setup_camera = function(position, up)
@@ -136,6 +144,12 @@
         if (this.settings.n_timesteps > 1)
         {
             options += "timestep," + (this.current_timestep + this.timerange[0]);
+        }
+
+        if (this.settings.do_isosurface == true)
+        {
+            options += "isosurface," 
+                + this.settings.isovalues.toString().replace(/,/g, "-");
         }
 
         var quality = lowquality;
@@ -500,6 +514,8 @@
         enable_rotation: true,
         animation_interval: 100,
         n_timesteps: 1,
+        do_isosurface: false,
+        isovalues: [0], 
         camera_link_status: 0 // 0: Not linked, 1: Waiting to be linked, 2: Linked
     };
 
