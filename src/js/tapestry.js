@@ -72,6 +72,11 @@
                 .split(",").map(function(i){return parseFloat(i)});
         }
 
+        if ($(this.element).attr("data-filters"))
+        {
+            this.settings.filters = $(this.element).attr("data-filters").split(",");
+        }
+
         // First render
         this.setup_camera();
         this.setup_handlers();
@@ -121,13 +126,15 @@
         var new_camera_position = m.multiply(this.camera.position);
         var new_camera_up = m.multiply(this.camera.up);
 
-        var x = new_camera_position.elements[0].toFixed(3);
-        var y = new_camera_position.elements[1].toFixed(3);
-        var z = new_camera_position.elements[2].toFixed(3);
+        var precision = 3;
+        var x = new_camera_position.elements[0].toFixed(precision);
+        var y = new_camera_position.elements[1].toFixed(precision);
+        var z = new_camera_position.elements[2].toFixed(precision);
 
-        var upx = new_camera_up.elements[0].toFixed(3);
-        var upy = new_camera_up.elements[1].toFixed(3);
-        var upz = new_camera_up.elements[2].toFixed(3);
+        precision = 3;
+        var upx = new_camera_up.elements[0].toFixed(precision);
+        var upy = new_camera_up.elements[1].toFixed(precision);
+        var upz = new_camera_up.elements[2].toFixed(precision);
 
         var viewx = -x;
         var viewy = -y;
@@ -150,6 +157,13 @@
         {
             options += "isosurface," 
                 + this.settings.isovalues.toString().replace(/,/g, "-");
+        }
+
+        // add filters if any
+        if (this.settings.filters.length > 0)
+        {
+            options += "filters,"
+                + this.settings.filters.join("-");
         }
 
         var quality = lowquality;
@@ -516,6 +530,7 @@
         n_timesteps: 1,
         do_isosurface: false,
         isovalues: [0], 
+        filters: [],
         camera_link_status: 0 // 0: Not linked, 1: Waiting to be linked, 2: Linked
     };
 
