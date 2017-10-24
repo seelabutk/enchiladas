@@ -326,21 +326,6 @@
             this.camera.rotateTo(pos);
             this.render(0);
             return this;
-
-            var iteration = 0;
-            var self = this;
-            animation_timer = setInterval(function(){
-                var temp_pos = pos
-                    .x(iteration / 100.0)
-                    .add(current_position.x(1 - iteration / 100.0));
-                self.camera.rotateTo(temp_pos);
-                self.render(1);
-                if (iteration++ > 100)
-                {
-                    clearInterval(animation_timer);
-                    self.render(0);
-                }
-            }, 50);
         }
         else if (operation == 'link')
         {
@@ -388,7 +373,7 @@
     Tapestry.prototype.setup_handlers = function()
     {
         var self = this;
-        $(this.element).on("mousedown", function(){
+        $(this.element).on("mousedown", function(event){
             self.is_drag = true;
 
             self.camera.LastRot = self.camera.ThisRot;
@@ -397,7 +382,7 @@
             return false;
         });
 
-        $(this.element).on("mousemove", function(){
+        $(this.element).on("mousemove", function(event){
             self.canceler = (self.canceler + 1) % 1000;
             if (self.canceler % 5 == 0)
             {
