@@ -194,9 +194,26 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     std::string save_filename;
     std::vector<std::string> filters; // If any image filters are specified, we'll put them here
     std::vector<float> isovalues; // In case isosurfacing is supported
+    pbnj::Volume *temp_volume; // Either a normal volume or a timeseries one 
 
+    // set a default volume based on the dataset type
+    // it'll be either a timeseries volume from timestep 0
+    // or the only single volume that exists
+    pbnj::CONFSTATE single_multi = config->getConfigState();
+    if (single_multi == pbnj::CONFSTATE::SINGLE_NOVAR 
+            || single_multi == pbnj::CONFSTATE::SINGLE_VAR)
+    {
+        temp_volume = udataset.volume; //by default
+    }
+    else
+    {
+        temp_volume = udataset.timeseries->getVolume(0); // by default
+    }
+
+    // parse the request's extra options
     if (request.hasParam(":options"))
     {
+
         std::string options_line = request.param(":options").as<std::string>();
         std::vector<std::string> options;
         const char *options_chars = options_line.c_str();
@@ -256,6 +273,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
                 if (timestep >= 0 && timestep < udataset.timeseries->getLength())
                 {
                     renderer_index = timestep;
+                    temp_volume = udataset.timeseries->getVolume(renderer_index);
                 }
                 else
                 {
@@ -275,6 +293,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
                 it++;
                 filename = *it;
                 renderer_index = udataset.timeseries->getVolumeIndex(filename);
+                temp_volume = udataset.timeseries->getVolume(renderer_index);
                 if (renderer_index == -1)
                 {
                     response.send(Http::Code::Not_Found, "Image does not exist");
@@ -311,11 +330,9 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         renderer[renderer_index]->cameraHeight = camera->imageHeight = std::min(config->imageHeight, lowquality);
     }
 
-
     camera->setPosition(camera_x, camera_y, camera_z);
     camera->setUpVector(up_x, up_y, up_z);
     camera->setView(view_x, view_y, view_z);
-
 
     if (onlysave)
     {
@@ -328,17 +345,19 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     {
         if (do_isosurface)
         {
-            renderer[renderer_index]->setIsosurface(udataset.volume, isovalues);
+            renderer[renderer_index]->setIsosurface(temp_volume, isovalues);
         }
         else
         {
-            renderer[renderer_index]->setVolume(udataset.volume);
+            renderer[renderer_index]->setVolume(temp_volume);
         }
 
         renderer[renderer_index]->renderToPNGObject(png);
         std::string png_data(png.begin(), png.end());
 
         /*
+         * HTTP-based filter implementation
+         *
         std::vector<Async::Promise<Http::Response>> responses;
 		Http::Client client;
 		auto options = Http::Client::options()
