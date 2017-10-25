@@ -38,6 +38,21 @@
         });
     }
 
+    // At the moment, we just need to detect Edge
+    function detectBrowser()
+    {
+        var browser = "";
+        if (window.navigator.userAgent.indexOf('Edge') > -1)
+        {
+            browser = "edge";
+        }
+        else
+        {
+            browser = "other";
+        }
+        return browser;
+    }
+
     Tapestry.prototype.init = function()
     {
         this.canceler = 0;
@@ -45,11 +60,16 @@
         this.camera = null;
         this.is_drag = false;
         this.linked_objs = [];
-        this.id = generate_uuid();
+        this.id = generate_uuid(); // deprecated
         this.timeseries_timer = null;
         this.current_timestep = 0;
         this.timerange = [0, 0];
         this.timelog = {};
+
+        // For scrolling support
+        this.browser = detectBrowser();
+        this.scroll_cma = 0; // cumulative moving average of scroll speed
+        this.scroll_counter = 0;
         
         $(this.element).attr("width", this.settings.width);
         $(this.element).attr("height", this.settings.height);
@@ -326,21 +346,6 @@
             this.camera.rotateTo(pos);
             this.render(0);
             return this;
-
-            var iteration = 0;
-            var self = this;
-            animation_timer = setInterval(function(){
-                var temp_pos = pos
-                    .x(iteration / 100.0)
-                    .add(current_position.x(1 - iteration / 100.0));
-                self.camera.rotateTo(temp_pos);
-                self.render(1);
-                if (iteration++ > 100)
-                {
-                    clearInterval(animation_timer);
-                    self.render(0);
-                }
-            }, 50);
         }
         else if (operation == 'link')
         {
@@ -388,7 +393,7 @@
     Tapestry.prototype.setup_handlers = function()
     {
         var self = this;
-        $(this.element).on("mousedown", function(){
+        $(this.element).on("mousedown", function(event){
             self.is_drag = true;
 
             self.camera.LastRot = self.camera.ThisRot;
@@ -397,7 +402,7 @@
             return false;
         });
 
-        $(this.element).on("mousemove", function(){
+        $(this.element).on("mousemove", function(event){
             self.canceler = (self.canceler + 1) % 1000;
             if (self.canceler % 5 == 0)
             {
@@ -420,58 +425,34 @@
             event.preventDefault();
         });
 
-        $(this.element).on("mousewheel", function(event){
+        $(this.element).on("wheel", function(event){
             if (self.settings.enableZoom == false)
                 return false;
-            self.camera.zoomScale -= event.originalEvent.wheelDeltaY * 0.1;
-            self.camera.position.elements[2] = self.camera.zoomScale;
-            self.render(1);
 
-            clearTimeout($.data(self, 'timer'));
-            $.data(self, 'timer', setTimeout(function() {
-                self.render(0);
-            }, 1000));
+            // Edge has easing and requires request cancellation
+            self.canceler = (self.canceler + 1) % 1000;
+            if (self.canceler % 5 == 0 || self.browser != "edge")
+            {
+                // Normalize the scroll speed using a cumulative moving average
+                var delta_sign = event.originalEvent.deltaY < 0 ? -1 : 1;
+                var delta = Math.abs(event.originalEvent.deltaY);
+                self.scroll_cma = (self.scroll_cma * self.scroll_counter + delta) * 
+                    1.0 / (self.scroll_counter + 1);
+                delta = delta_sign * delta / self.scroll_cma;
+                delta *= 30;
+                self.scroll_counter++; // this will grow indefinitely, must fix later
+
+                self.camera.zoomScale -= delta;
+                self.camera.position.elements[2] = self.camera.zoomScale;
+                self.render(1);
+
+                clearTimeout($.data(self, 'timer'));
+                $.data(self, 'timer', setTimeout(function() {
+                    self.render(0);
+                }, 500));
+            }
             return false;
         });
-
-        // MOA::BROKEN
-        /*
-         * Setup camera linking using a double click event
-         */
-        /*$(this.element).on("dblclick", function(){
-            if (self.settings.camera_link_status == 0)
-            {
-                // Look for others
-                var found = false;
-                $(".hyperimage").each(function(){
-                    if ($(this).data("tapestry").settings.camera_link_status == 1)
-                    {
-                        self.camera = $(this).data("tapestry").camera;
-                        self.settings.camera_link_status = 2;
-                        self.linked_objs.push($(this).data("tapestry"));
-                        // Add ourself to that object too
-                        $(this).data("tapestry").linked_objs.push(self);
-                    }
-                });
-
-                // If we didn't find a hyperimage ready to be linked then make this
-                // one ready to be linked
-                if (found == false)
-                {
-                    self.settings.camera_link_status = 1;
-                }
-            }
-            else
-            {
-                // Reset the camera
-                var current_camera_position = self.camera.position;
-                var current_camera_up = self.camera.up;
-                self.setup_camera(current_camera_position, current_camera_up);
-                
-                // TODO: Clean up all linkages of this object
-                
-            }
-        });*/
 
         /* 
          * Touch event handlers
@@ -523,10 +504,10 @@
         width: 512,
         height: 512,
         zoom: 512,
-        max_cache_length: 512,
+        max_cache_length: 512, // client-side caching for preventing browser request cancellation
         enable_zoom: true,
         enable_rotation: true,
-        animation_interval: 100,
+        animation_interval: 100, // speed of timeseries animations
         n_timesteps: 1,
         do_isosurface: false,
         isovalues: [0], 
