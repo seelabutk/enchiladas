@@ -5,6 +5,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <string>
+#include <map>
 #include <memory>
 #include <stdexcept>
 #include <stdio.h>
@@ -248,10 +249,17 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
             if (*it == "colormap")
             {
                 it++; // Get the value of the colormap
-                if (*it == "viridis")
-                    udataset.volume->setColorMap(pbnj::viridis);
-                else if (*it == "magma")
-                    udataset.volume->setColorMap(pbnj::magma);
+                // search the pbnj colormaps
+                std::map<std::string, std::vector<float>>::iterator cmap_it;
+                for (cmap_it = pbnj::colormaps.begin(); cmap_it != pbnj::colormaps.end(); cmap_it++)
+                {
+                    if (*it == cmap_it->first)
+                    {
+                        udataset.volume->setColorMap(pbnj::colormaps[*it]);
+                        break;
+                    }
+                }
+                // if the colormap wasn't found, it will default to grayscale
             }
 
             if (*it == "hq")
