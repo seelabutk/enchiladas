@@ -106,6 +106,24 @@ function Vector3fLength(v){
     return Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
 }
 
+function Matrix3fToQuat(m)
+{
+    m = $M(m);
+    // m is single dimensional, have to convert it to two dimensional
+    m = $M([
+            [m.e(1, 1), m.e(2, 1), m.e(3, 1)], 
+            [m.e(4, 1), m.e(5, 1), m.e(6, 1)], 
+            [m.e(7, 1), m.e(8, 1), m.e(9, 1)]
+    ]);
+    // elements start from 1 in m.e(...)
+    var w = Math.sqrt(1.0 + m.e(1, 1) + m.e(2, 2) + m.e(3, 3)) / 2.0;
+    var w4 = 4.0 * w;
+    var x = (m.e(3, 2) - m.e(2, 3)) / w4;
+    var y = (m.e(1, 3) - m.e(3, 1)) / w4;
+    var z = (m.e(2, 1) - m.e(1, 2)) / w4;
+    return $V([x, y, z, w]);
+}
+
 //create a 3x3 rotation from a quaternion
 //adapted from NeHe arcball rotation tutorial
 function Matrix3fSetRotationFromQuat4f(q){

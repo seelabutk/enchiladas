@@ -59,7 +59,11 @@ ArcBall.prototype = {
         //Compute the length of the perpendicular vector
         if(Vector3fLength(Perp) > 1.0e-5){//if its non-zero
             //In the quaternion values, w is cosine (theta / 2), where theta is rotation angle
-            return [Perp[0],Perp[1],Perp[2],dot(this.StVec,this.EnVec)];
+            var precision = 1;
+            return [Perp[0].toFixed(precision)
+                ,Perp[1].toFixed(precision)
+                ,Perp[2].toFixed(precision),
+                dot(this.StVec,this.EnVec).toFixed(precision)];
         } else {
             return [0.0,0.0,0.0,0.0]
         }
@@ -80,6 +84,47 @@ ArcBall.prototype = {
                            0.0,  0.0,  1.0 ];
 
         this.zoomScale = 1.0;
+    },
+
+    slerp: function(keyframe1, keyframe2, t)
+    {
+        var quat1 = Matrix3fToQuat(keyframe1[0]);
+        var quat2 = Matrix3fToQuat(keyframe2[0]);
+        var zoom1 = keyframe1[1];
+        var zoom2 = keyframe2[1];
+
+        quat1 = $V(quat1);
+        quat2 = $V(quat2);
+        quat1 = quat1.toUnitVector();
+        quat2 = quat2.toUnitVector();
+
+        var dot = quat1.dot(quat2);
+        var DOT_THRESHOLD = 0.9995;
+
+        if (Math.abs(dot) > DOT_THRESHOLD)
+        {
+            var result = quat1 + t * (quat2 - quat1);
+            result = result.toUnitVector();
+            return result;
+        }
+
+        if (dot < 0.0)
+        {
+            quat2 = quat2.x(-1);
+            dot = -dot;
+        }
+
+        dot = Math.min(Math.max(dot, -1), 1);
+        var theta0 = Math.acos(dot);
+        var theta = theta0 * t;
+
+        quat_new = quat2.subtract(quat1.multiply(dot));
+        quat_new = quat_new.toUnitVector();
+
+        return [
+            quat1.multiply(Math.cos(theta)).add(quat_new.multiply(Math.sin(theta))), 
+            zoom1 + t * (zoom2 - zoom1)
+        ];
     },
 
     move: function(X,Y){
@@ -197,6 +242,9 @@ ArcBall.prototype = {
             quat = [Perp[0],Perp[1],Perp[2],dot(normalized_src.elements, normalized_dst.elements)];
         } 
 
+        this.rotateFromQuaternion(quat, this.LastRot, null);
+        return;
+
         this.ThisRot = Matrix3fSetRotationFromQuat4f(quat);
 
         //accumulate the current rotation to all previous rotations
@@ -211,6 +259,26 @@ ArcBall.prototype = {
         //this.Transform.elements[3][3] *= dst_mag;
         this.position.elements[2] = dst_mag;
         this.zoomScale = this.position.elements[2];
+    },
+
+    rotateFromQuaternion: function(quat, lastrot, zoom)
+    {
+        this.LastRot = lastrot;
+        this.ThisRot = Matrix3fSetRotationFromQuat4f(quat);
+
+        //accumulate the current rotation to all previous rotations
+        var tmp = ArrayToSylvesterMatrix(this.ThisRot,3)
+                    .x(ArrayToSylvesterMatrix(this.LastRot,3))
+
+        //save rotation for next mouse event
+        this.ThisRot = SylvesterToArray(tmp);
+
+        //set the final transform matrix that we will multiply by the modelView
+        this.Transform = ArrayToSylvesterMatrix(SetRotationMatrixFrom3f(tmp),4);
+        //this.Transform.elements[3][3] *= dst_mag;
+        this.position.elements[2] = zoom == null ? 500 : zoom;
+        this.zoomScale = this.position.elements[2];
+    
     },
     
     rotateByAngle: function(angle, axis, original_position)

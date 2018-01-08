@@ -9,3 +9,9 @@ html, body
     display: block;
     margin: 5px auto;
 }
+.keyframes img 
+{
+    display: inline-block;
+    width: 150px;
+    height: 150px;
+}

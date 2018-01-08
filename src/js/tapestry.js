@@ -65,6 +65,7 @@
         this.current_timestep = 0;
         this.timerange = [0, 0];
         this.timelog = {};
+        this.keyframes = [];
 
         // For scrolling support
         this.browser = detectBrowser();
@@ -102,6 +103,7 @@
         this.setup_handlers();
         $(this.element).mousedown();
         $(this.element).mouseup();
+        this.camera.Quat = [0.0, 0.0, 0.0, 1.0];
     }
 
     Tapestry.prototype.setup_camera = function(position, up)
@@ -133,11 +135,16 @@
         return { position: new_camera_position.elements, up: new_camera_up.elements };
     }
 
-    Tapestry.prototype.render = function(lowquality, remote_call)
+    Tapestry.prototype.render = function(lowquality, remote_call, make_path_only)
     {
         if (typeof remote_call === 'undefined')
         {
             remote_call = false;
+        }
+
+        if (typeof make_path_only === 'undefined')
+        {
+            make_path_only = false;
         }
 
         var m = $M(this.camera.Transform);
@@ -202,6 +209,11 @@
             + "/" + upx + "/" + upy + "/" + upz + "/"
             + viewx + "/" + viewy + "/" + viewz + "/"
             + quality.toString() + "/" + options;
+
+        if (make_path_only)
+        {
+            return path;
+        }
 
         // Let's cache a bunch of the images so that requests
         // don't get cancelled by the browser. 
@@ -390,10 +402,76 @@
 
     }
 
+    Tapestry.prototype.smooth_rotate = function(end_p)
+    {
+        var p = this.getCameraInfo().position;
+        var orig_p = p;
+        var up = this.getCameraInfo().up;
+        var step = 0.05;
+        while (step < 1.0)
+        {
+            p[0] = (end_p[0] - orig_p[0]) * step;
+            p[1] = (end_p[1] - orig_p[1]) * step;
+            p[2] = (end_p[2] - orig_p[2]) * step;
+            var self = this;
+            setTimeout(function(){
+                self.do_action("position(" + p.slice(0, 3).toString() + ")");
+                console.log(p, step);
+            }, 20);
+            step += 0.05;
+        }
+    }
+
+    Tapestry.prototype.animate = function()
+    {
+        var counter = 0;
+        for (var i = 0; i < this.keyframes.length - 1; i++)
+        {
+            for (var j = 0; j < 1; j += 0.02)
+            {
+                var interpolation = this.camera.slerp(
+                        this.keyframes[i], 
+                        this.keyframes[i + 1], 
+                        j
+                );
+
+                var quat = interpolation[0].elements;
+                var zoomlevel = interpolation[1];
+
+                var lastrot = [  1.0,  0.0,  0.0,                  // Last Rotation
+                           0.0,  1.0,  0.0,
+                           0.0,  0.0,  1.0 ];
+                this.camera.rotateFromQuaternion(quat, lastrot, zoomlevel);
+                var path = this.render(0, undefined, true);
+                path += "onlysave," + counter.pad(3);
+                counter++;
+                var img = new Image();
+                img.src = path;
+            }
+        }
+    }
+
     Tapestry.prototype.setup_handlers = function()
     {
         var self = this;
+        $(this.element).on("contextmenu", function(){
+            return false;
+        });
+
         $(this.element).on("mousedown", function(event){
+            if (event.which == 3)
+            {
+                // right click 
+                console.log("added keyframe");
+                self.keyframes.push(
+                    [
+                        self.camera.ThisRot,
+                        self.camera.zoomScale
+                    ]
+                );
+                return
+            }
+
             self.is_drag = true;
 
             self.camera.LastRot = self.camera.ThisRot;
@@ -413,6 +491,12 @@
         });
 
         $(this.element).on("mouseup", function(event){
+            if (event.which == 3)
+            {
+                // right click
+                return false;
+            }
+
             var mouse_x = event.clientX - self.element.getBoundingClientRect().left;
             var mouse_y = event.clientY - self.element.getBoundingClientRect().top;
 
