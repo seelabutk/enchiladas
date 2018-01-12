@@ -429,11 +429,21 @@
         {
             for (var j = 0; j < 1; j += 0.02)
             {
+                // interpolate the rotation and the zoom
                 var interpolation = this.camera.slerp(
                         this.keyframes[i], 
                         this.keyframes[i + 1], 
                         j
                 );
+
+                // interpolate the timestep
+                var timestep = -1;
+                if (this.settings.n_timesteps > 1)
+                {
+                    timestep = this.keyframes[i][2] + j *
+                               (this.keyframes[i + 1][2] - this.keyframes[i][2]);
+                    timestep = Math.floor(timestep);
+                } 
 
                 var quat = interpolation[0].elements;
                 var zoomlevel = interpolation[1];
@@ -443,12 +453,32 @@
                            0.0,  0.0,  1.0 ];
                 this.camera.rotateFromQuaternion(quat, lastrot, zoomlevel);
                 var path = this.render(0, undefined, true);
+                if (timestep != -1)
+                {
+                    this.current_timestep = timestep;
+                }
+                if (!path.endsWith("/"))
+                {
+                    path += ",";
+                }
                 path += "onlysave," + counter.pad(3);
                 counter++;
                 var img = new Image();
                 img.src = path;
             }
         }
+    }
+
+    Tapestry.prototype.add_keyframe = function()
+    {
+        var frame = [];
+        frame.push(this.camera.ThisRot);
+        frame.push(this.camera.zoomScale);
+        if (this.settings.n_timesteps > 1)
+        {
+            frame.push(this.current_timestep);
+        }
+        this.keyframes.push(frame);
     }
 
     Tapestry.prototype.setup_handlers = function()
@@ -462,13 +492,7 @@
             if (event.which == 3)
             {
                 // right click 
-                console.log("added keyframe");
-                self.keyframes.push(
-                    [
-                        self.camera.ThisRot,
-                        self.camera.zoomScale
-                    ]
-                );
+                self.add_keyframe();
                 return
             }
 
