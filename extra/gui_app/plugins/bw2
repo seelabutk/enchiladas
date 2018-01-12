@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+
+from tapestry_plugin import Tools
+
+if __name__ == '__main__':
+    image = Tools.read_image()
+    image = image.convert('L')
+    Tools.write_image(image)

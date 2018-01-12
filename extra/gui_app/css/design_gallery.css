@@ -1,0 +1,14 @@
+html, body
+{
+    padding: 0;
+    margin: 0;
+    background-color: white;
+    text-align: center;
+}
+.hyperimage
+{
+    display: inline-block; 
+    width: 150px !important;
+    height: 150px !important; 
+    float: left;
+}

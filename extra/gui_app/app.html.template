@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+    <head>
+        <title>Tapestry</title>
+        <link rel="stylesheet" href="css/design_gallery.css">
+        <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+        <script src="js/smooth.js"></script>
+        <script src="js/gremlins.min.js"></script>
+        <script src="js/testing.js"></script>
+        <script src="js/tools.js"></script>
+        <script src="js/sylvester.js"></script>
+        <script src="js/math.js"></script>
+        <script src="js/arcball.js"></script>
+        <script src="js/tapestry.js"></script>
+        <script src="js/main.js"></script>
+    </head>
+    <body>
+        <!--<img class="hyperimage" style="left: inherit; top: inherit;" data-filters="watermark,bw2" data-dataset="teapot" src="/image" width="250" height="250"/>-->
+        <!--<img class="hyperimage" id="turbulence" style="left: inherit; bottom: inherit;" data-dataset="turbulence" src="/image" width="250" height="250"/>-->    
+        <%DESIGN_GALLERY%>
+    </body>
+</html>

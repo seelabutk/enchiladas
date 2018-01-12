@@ -1,0 +1,44 @@
+.keyframes
+{
+    
+}
+
+.keyframe
+{
+    width: 100px !important;
+    height: 100px !important;
+    border: 10px solid #eee;
+    border-radius: 3px;
+	margin-left: 5px;
+    margin-bottom: 20px;
+}
+
+.handle
+{
+    cursor: move;
+    cursor: -webkit-grabbing;
+	background-color: #eee;
+    border-radius: 2px 2px 0 0;
+    display: inline-block;
+    vertical-align: top;
+    text-align: center;
+    width: 120px;
+    position: absolute;
+    margin-top: -17px;
+	margin-left: 5px;
+}
+
+#wrapper
+{
+
+}
+
+ul
+{
+    list-style: none;
+}
+
+ul li
+{
+    float: left;
+}

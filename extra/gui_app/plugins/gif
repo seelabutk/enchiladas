@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cd ../data
+rm temp.gif
+convert * -background white -alpha remove -alpha off temp.gif
