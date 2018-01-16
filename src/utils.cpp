@@ -2,6 +2,91 @@
 #include "utils.h"
 
 namespace ench {
+    /*
+     * MOA::TODO This needs to be smarter. For starters, 
+     * it should free the old stuff. Also, it should check
+     * and only update a pbnj_container if it needs to. 
+     */
+    void apply_config(std::string config_name, 
+            pbnj::Configuration *config,
+            std::map<std::string, 
+            ench::pbnj_container>* volume_map)
+    {
+        pbnj::Camera *camera = new pbnj::Camera(
+                config->imageWidth, 
+                config->imageHeight);
+
+        // Let's keep a renderer per volume to support time series for now
+        pbnj::Renderer **renderer; 
+        pbnj::CONFSTATE single_multi = config->getConfigState();
+        ench::Dataset dataset;
+
+        // centerView has to be called before setCamera because the light position
+        // depends on it. 
+        camera->setPosition(config->cameraX, config->cameraY, config->cameraZ);
+        camera->centerView();
+
+        /*
+         * If we have a single volume at hand
+         */
+        if (single_multi == pbnj::CONFSTATE::SINGLE_NOVAR 
+                || single_multi == pbnj::CONFSTATE::SINGLE_VAR)
+        {
+            dataset.volume = new pbnj::Volume(
+                    config->dataFilename, 
+                    config->dataVariable, 
+                    config->dataXDim, 
+                    config->dataYDim, 
+                    config->dataZDim, true);
+
+            dataset.volume->setColorMap(config->colorMap);
+            dataset.volume->setOpacityMap(config->opacityMap);
+            dataset.volume->attenuateOpacity(config->opacityAttenuation);
+            renderer = new pbnj::Renderer*[1];
+            renderer[0] = new pbnj::Renderer();
+            renderer[0]->setVolume(dataset.volume);
+            renderer[0]->setBackgroundColor(config->bgColor);
+            renderer[0]->setCamera(camera);
+            renderer[0]->setSamples(config->samples);
+        }
+        /*
+         * If we have a time series
+         */
+        else if (single_multi == pbnj::CONFSTATE::MULTI_VAR 
+                || single_multi == pbnj::CONFSTATE::MULTI_NOVAR)
+        {
+            dataset.timeseries = new pbnj::TimeSeries(
+                    config->globbedFilenames, 
+                    config->dataVariable, 
+                    config->dataXDim,
+                    config->dataYDim,
+                    config->dataZDim);
+            dataset.timeseries->setColorMap(config->colorMap);
+            dataset.timeseries->setOpacityMap(config->opacityMap);
+            dataset.timeseries->setOpacityAttenuation(config->opacityAttenuation);
+            dataset.timeseries->setMemoryMapping(true);
+            dataset.timeseries->setMaxMemory(30);
+
+            renderer = new pbnj::Renderer*[dataset.timeseries->getLength()];
+            for (int i = 0; i < dataset.timeseries->getLength(); i++)
+            {
+                renderer[i] = new pbnj::Renderer();
+                renderer[i]->setVolume(dataset.timeseries->getVolume(i));
+                renderer[i]->setBackgroundColor(config->bgColor);
+                renderer[i]->setCamera(camera);
+                renderer[i]->setSamples(config->samples);
+            }
+        }
+        else
+        {
+            std::cerr<<"Cannot open this type of PBNJ file: "<<config_name;
+            return;
+        }
+
+        (*volume_map)[config_name] = std::make_tuple(config, 
+                dataset, camera, renderer);
+    }
+
     pid_t pcreate(int fds[2], const char* cmd)
     {
         pid_t pid;

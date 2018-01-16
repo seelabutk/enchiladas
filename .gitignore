@@ -2,3 +2,4 @@ build
 resources
 tbb
 extra/gui_app/design_gallery
+extra/gui_app/data

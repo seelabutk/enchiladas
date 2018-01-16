@@ -1,5 +1,6 @@
 #include "EnchiladaServer.h"
 #include "utils.h"
+#include "base64.h"
 
 #include <iostream>
 #include <fstream>
@@ -75,12 +76,18 @@ void EnchiladaServer::setupRoutes()
     // routing to plugins
     Routes::Get(router, "/extern/:plugin/:args?", 
             Routes::bind(&EnchiladaServer::handleExternalCommand, this));
+    Routes::Post(router, "/config/:configname", 
+            Routes::bind(&EnchiladaServer::handleConfiguration, this));
 
 }
 
 void EnchiladaServer::serveFile(Pistache::Http::ResponseWriter &response,
         std::string filename)
 {
+    /* This should probably be backwards; check the app/ directory first
+     * then run from the src directory if it wasn't found. 
+     * Must check later
+     */
     try
     {
         Http::serveFile(response, filename.c_str());
@@ -346,7 +353,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     {
         // no filters are supported for the onlysave option at the moment
         std::cout<<"Saving to "<<save_filename<<std::endl;
-        renderer[renderer_index]->renderImage("/app/data/" + save_filename + ".png");
+        renderer[renderer_index]->renderImage("app/data/" + save_filename + ".png");
         response.send(Http::Code::Ok, "saved");
     }
     else
@@ -411,5 +418,17 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
 
 }
 
+void EnchiladaServer::handleConfiguration(const Rest::Request &request, 
+        Pistache::Http::ResponseWriter response)
+{
+    std::string config_name = request.param(":configname").as<std::string>();
+    std::string encoded_json = request.body();
+    std::string json_string = base64_decode(encoded_json);
+    std::cout<<config_name<<json_string<<std::endl;
+    rapidjson::Document json;
+    json.Parse(json_string.c_str());
+    pbnj::Configuration *config = new pbnj::Configuration(json);
+    apply_config(config_name, config, &volume_map);
+}
 
 }
