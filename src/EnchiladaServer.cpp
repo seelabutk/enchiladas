@@ -146,6 +146,7 @@ void EnchiladaServer::handleExternalCommand(const Rest::Request &request,
 void EnchiladaServer::handleImage(const Rest::Request &request,
         Pistache::Http::ResponseWriter response)
 {
+    std::string request_uri = "/image/";
 
     int camera_x = 0;
     int camera_y = 0;
@@ -165,6 +166,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     if (request.hasParam(":dataset"))
     {
         dataset = request.param(":dataset").as<std::string>();
+        request_uri += dataset;
 
         camera_x = request.param(":x").as<std::int32_t>(); 
         camera_y = request.param(":y").as<std::int32_t>(); 
@@ -179,6 +181,11 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         view_z = request.param(":vz").as<float>();
 
         lowquality = request.param(":lowquality").as<int>();
+
+        request_uri += std::to_string(camera_x) + "/" + std::to_string(camera_y) + "/" + std::to_string(camera_z) + "/" +
+            std::to_string(up_x) + "/" + std::to_string(up_y) + "/" + std::to_string(up_z) + "/" + 
+            std::to_string(view_x) + "/" + std::to_string(view_y) + "/" + std::to_string(view_z) + "/" + 
+            std::to_string(lowquality) + "/"; 
     }
 
     // Check if this dataset exists in the loaded datasets
@@ -223,6 +230,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     {
 
         std::string options_line = request.param(":options").as<std::string>();
+        request_uri += options_line;
         std::vector<std::string> options;
         const char *options_chars = options_line.c_str();
         do
@@ -402,13 +410,15 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         client.shutdown();
         */
 
+        // Pad the request_uri
+        request_uri.insert(0, 2000 - request_uri.size(), ' ');
 
         for (auto it = filters.begin(); it != filters.end(); it++)
         {
             std::string filter = *it;
             filter = this->app_dir + "/plugins/" + filter;
             std::string filtered_data;
-            png_data = exec_filter(filter.c_str(), png_data);
+            png_data = exec_filter(filter.c_str(), request_uri, png_data);
         }
 
         auto mime = Http::Mime::MediaType::fromString("image/png");

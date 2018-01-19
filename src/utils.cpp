@@ -143,13 +143,18 @@ namespace ench {
         return -1;
     } 
 
-    std::string exec_filter(const char* cmd, std::string data) 
+    std::string exec_filter(const char* cmd, std::string request, 
+            std::string data) 
     {
         int fds[2];
         pid_t pid = pcreate(fds, cmd);
 
         long unsigned int data_size = data.length();
-        //write(fds[1], &data_size, sizeof(data_size)); // write the length of the data to the pipe
+        int max_req_length = 2000;
+        if (write(fds[1], request.c_str(), max_req_length) < 0)
+        {
+            std::cerr<<"Error when writing request to child\n"; 
+        }
         if (write(fds[1], data.c_str(), data.length()) < 0) // write the data itself
         {
             std::cerr<<"Error when writing to child\n";
