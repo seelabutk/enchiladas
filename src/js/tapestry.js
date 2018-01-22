@@ -98,8 +98,17 @@
             this.settings.filters = $(this.element).attr("data-filters").split(",");
         }
 
+        var original_position = $V([0, 0, this.settings.zoom, 1]);
+        if ($(this.element).attr("data-position"))
+        {
+            var temp = $(this.element).attr("data-position").split(",");
+            temp = temp.map(function(x) { return parseFloat(x); });
+            temp.push(1.0);
+            original_position = $V(temp);
+        }
+
         // First render
-        this.setup_camera();
+        this.setup_camera(original_position);
         this.setup_handlers();
         $(this.element).mousedown();
         $(this.element).mouseup();
@@ -108,6 +117,7 @@
 
     Tapestry.prototype.setup_camera = function(position, up)
     {
+        console.log(position);
         this.camera = new ArcBall();
         this.camera.up = (typeof up !== 'undefined' ? up : $V([0, 1, 0, 1.0]));
         this.camera.position = (typeof position !== 'undefined' ? position : $V([0, 0, this.settings.zoom, 1.0]));
@@ -484,17 +494,21 @@
     Tapestry.prototype.setup_handlers = function()
     {
         var self = this;
+        /*
         $(this.element).on("contextmenu", function(){
             return false;
         });
+        */
 
         $(this.element).on("mousedown", function(event){
+            /*
             if (event.which == 3)
             {
                 // right click 
                 self.add_keyframe();
                 return
             }
+            */
 
             self.is_drag = true;
 

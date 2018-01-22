@@ -166,7 +166,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     if (request.hasParam(":dataset"))
     {
         dataset = request.param(":dataset").as<std::string>();
-        request_uri += dataset;
+        request_uri += dataset + "/";
 
         camera_x = request.param(":x").as<std::int32_t>(); 
         camera_y = request.param(":y").as<std::int32_t>(); 
