@@ -204,9 +204,15 @@
 
         // convert the options dictionary to a string
         var options_str = "";
+        if (options.hasOwnProperty("timestep"))
+        {
+            // timestep needs to come first for the server
+            options_str += "timestep," + options["timestep"] + ",";
+        }
         for (var i in options)
         {
-            options_str += i + "," + options[i] + ",";
+            if (i != "timestep")
+                options_str += i + "," + options[i] + ",";
         }
         options_str = options_str.substring(0, options_str.length - 1);
 
