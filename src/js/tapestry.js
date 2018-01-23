@@ -179,29 +179,36 @@
 
         var dataset = $(this.element).attr("data-dataset");
         
-        var options = "";
+        var options = {};
         if ($(this.element).attr("data-colormap"))
         {
-            options += "colormap," + $(this.element).attr("data-colormap");
+            options["colormap"] = $(this.element).attr("data-colormap");
         }
 
         if (this.settings.n_timesteps > 1)
         {
-            options += "timestep," + (this.current_timestep + this.timerange[0]);
+            options["timestep"] = (this.current_timestep + this.timerange[0]);
         }
 
         if (this.settings.do_isosurface == true)
         {
-            options += "isosurface," 
-                + this.settings.isovalues.toString().replace(/,/g, "-");
+            options["isosurface"] = this.settings.isovalues.toString()
+                .replace(/,/g, "-");
         }
 
         // add filters if any
         if (this.settings.filters.length > 0)
         {
-            options += "filters,"
-                + this.settings.filters.join("-");
+            options["filters"] = this.settings.filters.join("-");
         }
+
+        // convert the options dictionary to a string
+        var options_str = "";
+        for (var i in options)
+        {
+            options_str += i + "," + options[i] + ",";
+        }
+        options_str = options_str.substring(0, options_str.length - 1);
 
         var quality = lowquality;
         if (lowquality == 0)
@@ -218,7 +225,7 @@
         var path = host + "image/" + dataset + "/" + x + "/" + y + "/" + z
             + "/" + upx + "/" + upy + "/" + upz + "/"
             + viewx + "/" + viewy + "/" + viewz + "/"
-            + quality.toString() + "/" + options;
+            + quality.toString() + "/" + options_str;
 
         if (make_path_only)
         {

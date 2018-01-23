@@ -210,6 +210,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     std::vector<std::string> filters; // If any image filters are specified, we'll put them here
     std::vector<float> isovalues; // In case isosurfacing is supported
     pbnj::Volume *temp_volume; // Either a normal volume or a timeseries one 
+    bool has_timesteps = false;
 
     // set a default volume based on the dataset type
     // it'll be either a timeseries volume from timestep 0
@@ -223,6 +224,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     else
     {
         temp_volume = udataset.timeseries->getVolume(0); // by default
+        has_timesteps = true;
     }
 
     // parse the request's extra options
@@ -244,6 +246,22 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
 
         for (auto it = options.begin(); it != options.end(); it++)
         {
+            if (*it == "timestep")
+            {
+                it++;
+                int timestep = std::stoi(*it);
+                if (has_timesteps && timestep >= 0 && 
+                        timestep < udataset.timeseries->getLength())
+                {
+                    renderer_index = timestep;
+                    temp_volume = udataset.timeseries->getVolume(renderer_index);
+                }
+                else
+                {
+                    std::cerr<<"Invalid timestep: "<<timestep<<std::endl;
+                }
+            }
+
             if (*it == "isosurface")
             {
                 it++; // Get the isovalues
@@ -270,38 +288,20 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
                 {
                     if (*it == cmap_it->first)
                     {
-                        udataset.volume->setColorMap(pbnj::colormaps[*it]);
+                        if (has_timesteps)
+                        {
+                        
+                            pbnj::Volume *temp = udataset.timeseries->getVolume(renderer_index);
+                            temp->setColorMap(pbnj::colormaps[*it]);
+                        }
+                        else
+                        {
+                            udataset.volume->setColorMap(pbnj::colormaps[*it]);
+                        }
                         break;
                     }
                 }
                 // if the colormap wasn't found, it will default to grayscale
-            }
-
-            if (*it == "hq")
-            {
-                it++;
-                if (*it == "true")
-                {
-                    std::cout<<"Woah, easter egg, rendering an 8192x8192 with 8 samples. "<<std::endl;
-                    renderer[0]->cameraWidth = camera->imageWidth = 8192;
-                    renderer[0]->cameraHeight = camera->imageHeight = 8192;
-                    renderer[0]->setSamples(8);
-                }
-            }
-
-            if (*it == "timestep")
-            {
-                it++;
-                int timestep = std::stoi(*it);
-                if (timestep >= 0 && timestep < udataset.timeseries->getLength())
-                {
-                    renderer_index = timestep;
-                    temp_volume = udataset.timeseries->getVolume(renderer_index);
-                }
-                else
-                {
-                    std::cerr<<"Invalid timestep: "<<timestep<<std::endl;
-                }
             }
 
             if (*it == "onlysave")
