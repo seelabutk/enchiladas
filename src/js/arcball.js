@@ -59,7 +59,7 @@ ArcBall.prototype = {
         //Compute the length of the perpendicular vector
         if(Vector3fLength(Perp) > 1.0e-5){//if its non-zero
             //In the quaternion values, w is cosine (theta / 2), where theta is rotation angle
-            var precision = 1;
+            var precision = 3;
             return [Perp[0].toFixed(precision)
                 ,Perp[1].toFixed(precision)
                 ,Perp[2].toFixed(precision),
