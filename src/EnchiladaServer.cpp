@@ -78,6 +78,8 @@ void EnchiladaServer::setupRoutes()
             Routes::bind(&EnchiladaServer::handleExternalCommand, this));
     Routes::Post(router, "/config/:configname", 
             Routes::bind(&EnchiladaServer::handleConfiguration, this));
+    Routes::Get(router, "/app/data/:filename", 
+            Routes::bind(&EnchiladaServer::handleAppData, this));
 
 }
 
@@ -439,6 +441,14 @@ void EnchiladaServer::handleConfiguration(const Rest::Request &request,
     pbnj::Configuration *config = new pbnj::Configuration(json);
     apply_config(config_name, config, &volume_map);
     response.send(Http::Code::Ok, "changed");
+}
+
+void EnchiladaServer::handleAppData(const Rest::Request &request, 
+        Pistache::Http::ResponseWriter response)
+{
+    auto filename = request.param(":filename").as<std::string>();
+    filename = "/app/data/" + filename;
+    serveFile(response, filename.c_str());
 }
 
 }

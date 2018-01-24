@@ -51,6 +51,8 @@ namespace ench {
                     Pistache::Http::ResponseWriter response);
             void handleConfiguration(const Rest::Request &request,
                     Pistache::Http::ResponseWriter response);
+            void handleAppData(const Rest::Request &request,
+                    Pistache::Http::ResponseWriter response);
 
             std::shared_ptr<Pistache::Http::Endpoint> httpEndpoint;
             Rest::Router router;
