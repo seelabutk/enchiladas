@@ -433,12 +433,12 @@ void EnchiladaServer::handleConfiguration(const Rest::Request &request,
 {
     std::string config_name = request.param(":configname").as<std::string>();
     std::string encoded_json = request.body();
-    std::string json_string = base64_decode(encoded_json);
-    std::cout<<config_name<<json_string<<std::endl;
+    std::string json_string = (encoded_json);
     rapidjson::Document json;
     json.Parse(json_string.c_str());
     pbnj::Configuration *config = new pbnj::Configuration(json);
     apply_config(config_name, config, &volume_map);
+    response.send(Http::Code::Ok, "changed");
 }
 
 }
