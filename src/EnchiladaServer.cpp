@@ -361,7 +361,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     {
         // no filters are supported for the onlysave option at the moment
         std::cout<<"Saving to "<<save_filename<<std::endl;
-        renderer[renderer_index]->renderImage("app/data/" + save_filename + ".png");
+        renderer[renderer_index]->renderImage("/app/data/" + save_filename + ".png");
         response.send(Http::Code::Ok, "saved");
     }
     else
