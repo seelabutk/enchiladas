@@ -463,10 +463,18 @@
                 var timestep = -1;
                 if (this.settings.n_timesteps > 1)
                 {
-                    timestep = this.keyframes[i][2] + j *
-                               (this.keyframes[i + 1][2] - this.keyframes[i][2]);
+                    timestep = this.keyframes[i]["timestep"] + j *
+                               (this.keyframes[i + 1]["timestep"] - this.keyframes[i]["timestep"]);
                     timestep = Math.floor(timestep);
                 } 
+
+                var isovalue = -1;
+                if (this.settings.do_isosurface && this.keyframes[i].hasOwnProperty("isovalue"))
+                {
+                    isovalue = this.keyframes[i]["isovalue"] + j * 
+                        (this.keyframes[i + 1]["isovalue"] - this.keyframes[i]["isovalue"]);
+
+                }
 
                 var quat = interpolation[0].elements;
                 var zoomlevel = interpolation[1];
@@ -479,6 +487,11 @@
                 if (timestep != -1)
                 {
                     this.current_timestep = timestep;
+                }
+                if (isovalue != -1)
+                {
+                    this.settings.do_isosurface = true;
+                    this.settings.isovalues = [isovalue];
                 }
                 if (!path.endsWith("/"))
                 {

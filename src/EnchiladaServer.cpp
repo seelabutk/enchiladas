@@ -359,6 +359,15 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     camera->setUpVector(up_x, up_y, up_z);
     camera->setView(view_x, view_y, view_z);
 
+    if (do_isosurface)
+    {
+        renderer[renderer_index]->setIsosurface(temp_volume, isovalues);
+    }
+    else
+    {
+        renderer[renderer_index]->setVolume(temp_volume);
+    }
+
     if (onlysave)
     {
         // no filters are supported for the onlysave option at the moment
@@ -368,15 +377,6 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     }
     else
     {
-        if (do_isosurface)
-        {
-            renderer[renderer_index]->setIsosurface(temp_volume, isovalues);
-        }
-        else
-        {
-            renderer[renderer_index]->setVolume(temp_volume);
-        }
-
         renderer[renderer_index]->renderToPNGObject(png);
         std::string png_data(png.begin(), png.end());
 
