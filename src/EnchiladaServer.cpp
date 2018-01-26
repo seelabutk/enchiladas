@@ -1,6 +1,5 @@
 #include "EnchiladaServer.h"
 #include "utils.h"
-#include "base64.h"
 
 #include <iostream>
 #include <fstream>
@@ -86,18 +85,14 @@ void EnchiladaServer::setupRoutes()
 void EnchiladaServer::serveFile(Pistache::Http::ResponseWriter &response,
         std::string filename)
 {
-    /* This should probably be backwards; check the app/ directory first
-     * then run from the src directory if it wasn't found. 
-     * Must check later
-     */
     try
-    {
-        Http::serveFile(response, filename.c_str());
-    }
-    catch(...)
     {
         std::string app_path = this->app_dir + "/" + filename;
         Http::serveFile(response, app_path.c_str());
+    }
+    catch(...)
+    {
+        Http::serveFile(response, filename.c_str());
     }
 }
 
