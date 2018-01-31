@@ -445,78 +445,6 @@
         }
     }
 
-    Tapestry.prototype.animate = function()
-    {
-        var counter = 0;
-        for (var i = 0; i < this.keyframes.length - 1; i++)
-        {
-            for (var j = 0; j < 1; j += 0.02)
-            {
-                // interpolate the rotation and the zoom
-                var interpolation = this.camera.slerp(
-                        this.keyframes[i], 
-                        this.keyframes[i + 1], 
-                        j
-                );
-
-                // interpolate the timestep
-                var timestep = -1;
-                if (this.settings.n_timesteps > 1)
-                {
-                    timestep = this.keyframes[i]["timestep"] + j *
-                               (this.keyframes[i + 1]["timestep"] - this.keyframes[i]["timestep"]);
-                    timestep = Math.floor(timestep);
-                } 
-
-                var isovalue = -1;
-                if (this.settings.do_isosurface && this.keyframes[i].hasOwnProperty("isovalue"))
-                {
-                    isovalue = this.keyframes[i]["isovalue"] + j * 
-                        (this.keyframes[i + 1]["isovalue"] - this.keyframes[i]["isovalue"]);
-
-                }
-
-                var quat = interpolation[0].elements;
-                var zoomlevel = interpolation[1];
-
-                var lastrot = [  1.0,  0.0,  0.0,                  // Last Rotation
-                           0.0,  1.0,  0.0,
-                           0.0,  0.0,  1.0 ];
-                this.camera.rotateFromQuaternion(quat, lastrot, zoomlevel);
-                var path = this.render(0, undefined, true);
-                if (timestep != -1)
-                {
-                    this.current_timestep = timestep;
-                }
-                if (isovalue != -1)
-                {
-                    this.settings.do_isosurface = true;
-                    this.settings.isovalues = [isovalue];
-                }
-                if (!path.endsWith("/"))
-                {
-                    path += ",";
-                }
-                path += "onlysave," + counter.pad(3);
-                counter++;
-                var img = new Image();
-                img.src = path;
-            }
-        }
-    }
-
-    Tapestry.prototype.add_keyframe = function()
-    {
-        var frame = [];
-        frame.push(this.camera.ThisRot);
-        frame.push(this.camera.zoomScale);
-        if (this.settings.n_timesteps > 1)
-        {
-            frame.push(this.current_timestep);
-        }
-        this.keyframes.push(frame);
-    }
-
     Tapestry.prototype.setup_handlers = function()
     {
         var self = this;
@@ -527,15 +455,6 @@
         */
 
         $(this.element).on("mousedown", function(event){
-            /*
-            if (event.which == 3)
-            {
-                // right click 
-                self.add_keyframe();
-                return
-            }
-            */
-
             self.is_drag = true;
 
             self.camera.LastRot = self.camera.ThisRot;
