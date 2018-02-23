@@ -37,7 +37,8 @@ namespace ench {
                     config->dataVariable, 
                     config->dataXDim, 
                     config->dataYDim, 
-                    config->dataZDim, true);
+                    config->dataZDim, true,
+                    config->dataNumComponents);
 
             dataset.volume->setColorMap(config->colorMap);
             dataset.volume->setOpacityMap(config->opacityMap);
@@ -60,7 +61,8 @@ namespace ench {
                     config->dataVariable, 
                     config->dataXDim,
                     config->dataYDim,
-                    config->dataZDim);
+                    config->dataZDim,
+                    config->dataNumComponents);
             dataset.timeseries->setColorMap(config->colorMap);
             dataset.timeseries->setOpacityMap(config->opacityMap);
             dataset.timeseries->setOpacityAttenuation(config->opacityAttenuation);
