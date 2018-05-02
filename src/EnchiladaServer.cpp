@@ -341,13 +341,12 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
 
     if (lowquality == 1)
     {
-        renderer[renderer_index]->cameraWidth = camera->imageWidth = 64;
-        renderer[renderer_index]->cameraHeight = camera->imageHeight = 64;
+        camera->setImageSize(64, 64);
     }
     else
     {
-        renderer[renderer_index]->cameraWidth = camera->imageWidth = std::min(config->imageWidth, lowquality);
-        renderer[renderer_index]->cameraHeight = camera->imageHeight = std::min(config->imageHeight, lowquality);
+        camera->setImageSize(std::min(config->imageWidth, lowquality),
+                std::min(config->imageHeight, lowquality));
     }
 
     camera->setPosition(camera_x, camera_y, camera_z);
