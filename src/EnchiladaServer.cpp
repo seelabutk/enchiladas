@@ -197,7 +197,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     pbnj::Camera *camera = std::get<2>(volume_map[dataset]);
     pbnj::Renderer **renderer = std::get<3>(volume_map[dataset]);
     
-    std::vector<unsigned char> png;
+    std::vector<unsigned char> jpg;
 
     int renderer_index = 0; // Equal to a valid timestep
     bool onlysave = false;
@@ -371,8 +371,8 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     }
     else
     {
-        renderer[renderer_index]->renderToPNGObject(png);
-        std::string png_data(png.begin(), png.end());
+        renderer[renderer_index]->renderToJPGObject(jpg, 100);
+        std::string jpg_data(jpg.begin(), jpg.end());
 
         /*
          * HTTP-based filter implementation
@@ -390,7 +390,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
             std::string filter = *it;
 
             auto request_builder = client.post("http://accona.eecs.utk.edu:8050/" + filter);
-            auto resp = request_builder.body(png_data).send();
+            auto resp = request_builder.body(jpg_data).send();
             std::cout<<"Request sent"<<std::endl;
             resp.then([&](Http::Response filter_response) {
                 auto mime = Http::Mime::MediaType::fromString("image/png");
@@ -414,11 +414,11 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
             std::string filter = *it;
             filter = this->app_dir + "/plugins/" + filter;
             std::string filtered_data;
-            png_data = exec_filter(filter.c_str(), request_uri, png_data);
+            jpg_data = exec_filter(filter.c_str(), request_uri, jpg_data);
         }
 
-        auto mime = Http::Mime::MediaType::fromString("image/png");
-        response.send(Http::Code::Ok, png_data, mime);
+        auto mime = Http::Mime::MediaType::fromString("image/jpg");
+        response.send(Http::Code::Ok, jpg_data, mime);
 
     }
 
