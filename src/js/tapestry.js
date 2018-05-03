@@ -258,8 +258,14 @@
             quality = this.settings.width;
         }
 
-        var host = "";
-        if (this.settings.host !== undefined)
+        var host;
+        if (this.settings.host.constructor === Array)
+        {
+            var random = Math.floor(Math.random() 
+                    * this.settings.host.length);
+            host = this.settings.host[random] + "/";
+        }
+        else
         {
             host = this.settings.host + "/";
         }
