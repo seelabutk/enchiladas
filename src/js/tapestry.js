@@ -281,7 +281,7 @@
         var requests = [];
         for (var i = 0; i < n_tiles; i++)
         {
-            var path = this.make_request(0, i);
+            var path = this.make_request(lowquality, i);
             var img = new Image();
             img.tileid = i.toString();
             var self = this;
@@ -542,7 +542,7 @@
             {
                 var mouse_x = event.clientX - self.element.getBoundingClientRect().left;
                 var mouse_y = event.clientY - self.element.getBoundingClientRect().top;
-                self.rotate(mouse_x, mouse_y, 1); // Render low quality version
+                self.rotate(mouse_x, mouse_y, 256); // Render low quality version
             }
         });
 
