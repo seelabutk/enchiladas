@@ -54,6 +54,9 @@ namespace ench {
             void handleAppData(const Rest::Request &request,
                     Pistache::Http::ResponseWriter response);
 
+            void calculateTileRegion(int tile_index, int num_tiles,
+                    int n_cols, std::vector<float> &region);
+
             std::shared_ptr<Pistache::Http::Endpoint> httpEndpoint;
             Rest::Router router;
             std::map<std::string, pbnj_container> volume_map;

@@ -71,7 +71,7 @@ void EnchiladaServer::setupRoutes()
     Routes::Get(router, "/css/:filename",
             Routes::bind(&EnchiladaServer::handleCSS, this));
     // serving renders
-    Routes::Get(router, "/image/:dataset/:x/:y/:z/:upx/:upy/:upz/:vx/:vy/:vz/:lowquality/:options?",
+    Routes::Get(router, "/image/:dataset/:x/:y/:z/:upx/:upy/:upz/:vx/:vy/:vz/:imagesize/:options?",
             Routes::bind(&EnchiladaServer::handleImage, this));
     // routing to plugins
     Routes::Get(router, "/extern/:plugin/:args?", 
@@ -158,7 +158,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     float view_y = 0;
     float view_z = 1;
 
-    int lowquality = 0;
+    int imagesize = 0;
     std::string dataset = "";
 
     if (request.hasParam(":dataset"))
@@ -178,12 +178,12 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         view_y = request.param(":vy").as<float>();
         view_z = request.param(":vz").as<float>();
 
-        lowquality = request.param(":lowquality").as<int>();
+        imagesize = request.param(":imagesize").as<int>();
 
         request_uri += std::to_string(camera_x) + "/" + std::to_string(camera_y) + "/" + std::to_string(camera_z) + "/" +
             std::to_string(up_x) + "/" + std::to_string(up_y) + "/" + std::to_string(up_z) + "/" + 
             std::to_string(view_x) + "/" + std::to_string(view_y) + "/" + std::to_string(view_z) + "/" + 
-            std::to_string(lowquality) + "/"; 
+            std::to_string(imagesize) + "/"; 
     }
 
     // Check if this dataset exists in the loaded datasets
@@ -209,7 +209,8 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     std::vector<float> isovalues; // In case isosurfacing is supported
     pbnj::Volume *temp_volume; // Either a normal volume or a timeseries one 
     bool has_timesteps = false;
-    int current_tile, num_tiles;
+    int n_cols = 1;
+    bool do_tiling = false;
 
     // set a default volume based on the dataset type
     // it'll be either a timeseries volume from timestep 0
@@ -251,14 +252,22 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
                 std::string tile_str = *it;
                 const char *tile_char = tile_str.c_str();
                 std::vector<int> tile_values;
+
+                // get the tile index and number of tiles
+                // "tiling,3-16" -> tile index 3 of 16 tiles
                 do {
                     const char *t_begin = tile_char;
                     while(*tile_char != '-' && *tile_char)
                         tile_char++;
                     tile_values.push_back(std::stoi(std::string(t_begin, tile_char)));
                 } while(0 != *tile_char++);
-                current_tile = tile_values[0];
-                num_tiles = tile_values[1];
+
+                // calculate the region of the image for this tile
+                // and tell the camera to only render that region
+                n_cols = (int) sqrtf(tile_values[1]);
+                std::vector<float> region;
+                this->calculateTileRegion(tile_values[0], tile_values[1], n_cols, region);
+                camera->setRegion(region[0], region[1], region[2], region[3]);
             }
 
             if (*it == "timestep")
@@ -357,31 +366,12 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         }
     }
 
-    /*
-    if (lowquality == 1)
-    {
-        camera->setImageSize(64, 64);
-    }
-    else
-    {
-        camera->setImageSize(std::min(config->imageWidth, lowquality),
-                std::min(config->imageHeight, lowquality));
-    }
-    */
-    float top, right, bottom, left;
-    int n_cols = (int) sqrtf(num_tiles);
-    int tile_x = current_tile % n_cols;
-    int tile_y = current_tile / n_cols;
-    //std::cerr << "tile " << current_tile << " of " << num_tiles << ", " << n_cols << " cols" << std::endl;
-    //std::cerr << "x,y " << tile_x << " " << tile_y << std::endl;
-    top = ((float) n_cols - tile_y) / n_cols;
-    right = ((float) tile_x + 1) / n_cols;
-    bottom = ((float) n_cols - tile_y - 1) / n_cols;
-    left = ((float) tile_x) / n_cols;
-    //std::cerr << "region " << top << " " << right << " " << bottom << " " << left << std::endl;
-    camera->setRegion(top, right, bottom, left);
 
-    camera->setImageSize(lowquality/n_cols, lowquality/n_cols);
+    camera->setImageSize(imagesize/n_cols, imagesize/n_cols);
+    /* for capping the size of the render
+    camera->setImageSize(std::min(config->imageWidth, imagesize),
+            std::min(config->imageHeight, imagesize));
+    */
 
     camera->setPosition(camera_x, camera_y, camera_z);
     camera->setUpVector(up_x, up_y, up_z);
@@ -477,6 +467,25 @@ void EnchiladaServer::handleAppData(const Rest::Request &request,
     auto filename = request.param(":filename").as<std::string>();
     filename = "/app/data/" + filename;
     serveFile(response, filename.c_str());
+}
+
+void EnchiladaServer::calculateTileRegion(int tile_index, int num_tiles,
+        int n_cols, std::vector<float> &region)
+{
+    int tile_x = tile_index % n_cols;
+    int tile_y = tile_index / n_cols;
+    //std::cerr << "tile " << tile_index << " of " << num_tiles << ", " << n_cols << " cols" << std::endl;
+    //std::cerr << "x,y " << tile_x << " " << tile_y << std::endl;
+    region.push_back( ((float) n_cols - tile_y) / n_cols );      // top
+    region.push_back( ((float) tile_x + 1) / n_cols );           // right
+    region.push_back( ((float) n_cols - tile_y - 1) / n_cols );  // bottom
+    region.push_back( ((float) tile_x) / n_cols );               // left
+    /*
+    std::cerr << "region " << region[0] << " "
+                           << region[1] << " "
+                           << region[2] << " "
+                           << region[3] << std::endl;
+    */
 }
 
 }
