@@ -78,6 +78,11 @@
         $(this.element).css("width", this.settings.width.toString() + "px");
         $(this.element).css("height", this.settings.height.toString() + "px");
 
+        if ($(this.element).attr("data-tiling"))
+        {
+            this.setup_tiles();
+        }
+
         if ($(this.element).attr("data-timerange"))
         {
             var range = $(this.element).attr("data-timerange").split("..");
@@ -126,6 +131,35 @@
         this.camera.zoomScale = this.camera.position.elements[2];
     }
 
+    Tapestry.prototype.setup_tiles = function()
+    {
+        var base = $("<div>")
+            .attr("class", "tapestry-tile-base")
+            .css({
+                "width": this.settings.width,
+                "height": this.settings.height,
+                "pointer-events": "none"
+            })
+            .appendTo(this.element);
+
+        var n_tiles = this.settings.n_tiles;
+        var n_cols = Math.sqrt(n_tiles);
+        var tile_width = this.settings.width / n_cols;
+
+        for (var i = 0; i < n_tiles; i++)
+        {
+            $("<img>")
+                .attr("class", "tapestry-tile-image")
+                .attr("id", "tapestry-tile-" + i.toString())
+                .css({
+                    "float": "left",
+                    "width": tile_width + "px",
+                    "height": tile_width + "px"
+                })
+                .appendTo(base);
+        }
+    }
+
     Tapestry.prototype.getCameraInfo = function()
     {
         var m = $M(this.camera.Transform);
@@ -145,16 +179,12 @@
         return { position: new_camera_position.elements, up: new_camera_up.elements };
     }
 
-    Tapestry.prototype.render = function(lowquality, remote_call, make_path_only)
+    Tapestry.prototype.make_request = function(lowquality, tileid)
     {
-        if (typeof remote_call === 'undefined')
+        var tiling = true;
+        if (typeof tileid == 'undefined')
         {
-            remote_call = false;
-        }
-
-        if (typeof make_path_only === 'undefined')
-        {
-            make_path_only = false;
+            tiling = false;
         }
 
         var m = $M(this.camera.Transform);
@@ -180,6 +210,12 @@
         var dataset = $(this.element).attr("data-dataset");
         
         var options = {};
+
+        if (tiling)
+        {
+            options["tiling"] = tileid.toString() + "-" + this.settings.n_tiles.toString();
+        }
+
         if ($(this.element).attr("data-colormap"))
         {
             options["colormap"] = $(this.element).attr("data-colormap");
@@ -233,10 +269,47 @@
             + viewx + "/" + viewy + "/" + viewz + "/"
             + quality.toString() + "/" + options_str;
 
-        if (make_path_only)
+        return path;
+    }
+
+    Tapestry.prototype.render = function(lowquality, remote_call, make_path_only)
+    {
+        var n_tiles = this.settings.n_tiles;
+        var n_cols = Math.sqrt(n_tiles);
+        var width = this.settings.width;
+
+        var requests = [];
+        for (var i = 0; i < n_tiles; i++)
         {
-            return path;
+            var path = this.make_request(0, i);
+            var img = new Image();
+            img.tileid = i.toString();
+            var self = this;
+            img.onload = function() {
+                var tile = $(self.element).find("#tapestry-tile-" + this.tileid).eq(0);
+                tile.attr("src", this.src);
+            }
+            img.src = path;
         }
+        /*
+        Promise.all(requests).then(function(results){
+            for (var i = 0; i < n_tiles; i++)
+            {
+                $(this.element).children(".tapestry-tile-" + i.toString)
+                    .attr("src", results[i]);
+            }
+        });
+        */
+    }
+
+    Tapestry.prototype.render_single = function(lowquality, remote_call)
+    {
+        if (typeof remote_call === 'undefined')
+        {
+            remote_call = false;
+        }
+
+        var path = this.make_request(lowquality);
 
         // Let's cache a bunch of the images so that requests
         // don't get cancelled by the browser. 
