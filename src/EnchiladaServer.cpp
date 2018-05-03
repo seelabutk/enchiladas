@@ -381,7 +381,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     //std::cerr << "region " << top << " " << right << " " << bottom << " " << left << std::endl;
     camera->setRegion(top, right, bottom, left);
 
-    camera->setImageSize(config->imageWidth/n_cols, config->imageHeight/n_cols);
+    camera->setImageSize(lowquality/n_cols, lowquality/n_cols);
 
     camera->setPosition(camera_x, camera_y, camera_z);
     camera->setUpVector(up_x, up_y, up_z);
