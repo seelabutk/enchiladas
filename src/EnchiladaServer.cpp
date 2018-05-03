@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <stdio.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "pistache/http.h"
 #include "pistache/router.h"
@@ -208,6 +209,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     std::vector<float> isovalues; // In case isosurfacing is supported
     pbnj::Volume *temp_volume; // Either a normal volume or a timeseries one 
     bool has_timesteps = false;
+    int current_tile, num_tiles;
 
     // set a default volume based on the dataset type
     // it'll be either a timeseries volume from timestep 0
@@ -243,6 +245,22 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
 
         for (auto it = options.begin(); it != options.end(); it++)
         {
+            if (*it == "tiling")
+            {
+                it++;
+                std::string tile_str = *it;
+                const char *tile_char = tile_str.c_str();
+                std::vector<int> tile_values;
+                do {
+                    const char *t_begin = tile_char;
+                    while(*tile_char != '-' && *tile_char)
+                        tile_char++;
+                    tile_values.push_back(std::stoi(std::string(t_begin, tile_char)));
+                } while(0 != *tile_char++);
+                current_tile = tile_values[0];
+                num_tiles = tile_values[1];
+            }
+
             if (*it == "timestep")
             {
                 it++;
@@ -339,6 +357,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         }
     }
 
+    /*
     if (lowquality == 1)
     {
         camera->setImageSize(64, 64);
@@ -348,6 +367,21 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         camera->setImageSize(std::min(config->imageWidth, lowquality),
                 std::min(config->imageHeight, lowquality));
     }
+    */
+    float top, right, bottom, left;
+    int n_cols = (int) sqrtf(num_tiles);
+    int tile_x = current_tile % n_cols;
+    int tile_y = current_tile / n_cols;
+    //std::cerr << "tile " << current_tile << " of " << num_tiles << ", " << n_cols << " cols" << std::endl;
+    //std::cerr << "x,y " << tile_x << " " << tile_y << std::endl;
+    top = ((float) n_cols - tile_y) / n_cols;
+    right = ((float) tile_x + 1) / n_cols;
+    bottom = ((float) n_cols - tile_y - 1) / n_cols;
+    left = ((float) tile_x) / n_cols;
+    //std::cerr << "region " << top << " " << right << " " << bottom << " " << left << std::endl;
+    camera->setRegion(top, right, bottom, left);
+
+    camera->setImageSize(config->imageWidth/n_cols, config->imageHeight/n_cols);
 
     camera->setPosition(camera_x, camera_y, camera_z);
     camera->setUpVector(up_x, up_y, up_z);
