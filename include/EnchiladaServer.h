@@ -8,6 +8,7 @@
 #include "Configuration.h"
 #include "Camera.h"
 #include "TimeSeries.h"
+#include "Particles.h"
 
 #include "pistache/http.h"
 #include "pistache/router.h"
@@ -20,6 +21,7 @@ namespace ench {
     {
         pbnj::Volume* volume;
         pbnj::TimeSeries *timeseries;
+        pbnj::Particles *particles;
     };
 
     typedef std::tuple<pbnj::Configuration*, ench::Dataset, 

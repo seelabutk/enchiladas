@@ -19,6 +19,7 @@
 #include "pbnj.h"
 #include "Camera.h"
 #include "Configuration.h"
+#include "Particles.h"
 #include "Renderer.h"
 #include "TransferFunction.h"
 #include "TimeSeries.h"
@@ -145,9 +146,9 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
 {
     std::string request_uri = "/image/";
 
-    int camera_x = 0;
-    int camera_y = 0;
-    int camera_z = 0;
+    float camera_x = 0;
+    float camera_y = 0;
+    float camera_z = 0;
 
     float up_x = 0;
     float up_y = 1;
@@ -165,9 +166,9 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         dataset = request.param(":dataset").as<std::string>();
         request_uri += dataset + "/";
 
-        camera_x = request.param(":x").as<std::int32_t>(); 
-        camera_y = request.param(":y").as<std::int32_t>(); 
-        camera_z = request.param(":z").as<std::int32_t>(); 
+        camera_x = request.param(":x").as<float>(); 
+        camera_y = request.param(":y").as<float>(); 
+        camera_z = request.param(":z").as<float>(); 
 
         up_x = request.param(":upx").as<float>();
         up_y = request.param(":upy").as<float>();
@@ -207,6 +208,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     std::vector<std::string> filters; // If any image filters are specified, we'll put them here
     std::vector<float> isovalues; // In case isosurfacing is supported
     pbnj::Volume *temp_volume; // Either a normal volume or a timeseries one 
+    pbnj::Particles *temp_particles;
     bool has_timesteps = false;
 
     // set a default volume based on the dataset type
@@ -216,7 +218,9 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     if (single_multi == pbnj::CONFSTATE::SINGLE_NOVAR 
             || single_multi == pbnj::CONFSTATE::SINGLE_VAR)
     {
-        temp_volume = udataset.volume; //by default
+        //temp_volume = udataset.volume; //by default
+        // ALOK: no volume for you
+        temp_particles = udataset.particles;
     }
     else
     {
@@ -360,7 +364,9 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     }
     else
     {
-        renderer[renderer_index]->setVolume(temp_volume);
+        //renderer[renderer_index]->setVolume(temp_volume);
+        // ALOK: no volume for you
+        renderer[renderer_index]->setParticles(temp_particles);
     }
 
     if (onlysave)

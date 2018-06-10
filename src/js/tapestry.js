@@ -568,8 +568,8 @@
      */
     $.fn.tapestry.settings = {
         host: "",
-        width: 512,
-        height: 512,
+        width: 1024,
+        height: 1024,
         zoom: 512,
         max_cache_length: 512, // client-side caching for preventing browser request cancellation
         enable_zoom: true,

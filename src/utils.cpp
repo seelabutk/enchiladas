@@ -32,22 +32,34 @@ namespace ench {
         if (single_multi == pbnj::CONFSTATE::SINGLE_NOVAR 
                 || single_multi == pbnj::CONFSTATE::SINGLE_VAR)
         {
-            dataset.volume = new pbnj::Volume(
-                    config->dataFilename, 
-                    config->dataVariable, 
-                    config->dataXDim, 
-                    config->dataYDim, 
-                    config->dataZDim, true);
+            // ALOK: total hack
+            if(config->dataFilename.back() == 'z') {
+                dataset.particles = new pbnj::Particles(config->dataFilename);
+                renderer = new pbnj::Renderer*[1];
+                renderer[0] = new pbnj::Renderer();
+                renderer[0]->setParticles(dataset.particles);
+                renderer[0]->setBackgroundColor(config->bgColor);
+                renderer[0]->setCamera(camera);
+                renderer[0]->setSamples(config->samples);
+            }
+            else {
+                dataset.volume = new pbnj::Volume(
+                        config->dataFilename, 
+                        config->dataVariable, 
+                        config->dataXDim, 
+                        config->dataYDim, 
+                        config->dataZDim, true);
 
-            dataset.volume->setColorMap(config->colorMap);
-            dataset.volume->setOpacityMap(config->opacityMap);
-            dataset.volume->attenuateOpacity(config->opacityAttenuation);
-            renderer = new pbnj::Renderer*[1];
-            renderer[0] = new pbnj::Renderer();
-            renderer[0]->setVolume(dataset.volume);
-            renderer[0]->setBackgroundColor(config->bgColor);
-            renderer[0]->setCamera(camera);
-            renderer[0]->setSamples(config->samples);
+                dataset.volume->setColorMap(config->colorMap);
+                dataset.volume->setOpacityMap(config->opacityMap);
+                dataset.volume->attenuateOpacity(config->opacityAttenuation);
+                renderer = new pbnj::Renderer*[1];
+                renderer[0] = new pbnj::Renderer();
+                renderer[0]->setVolume(dataset.volume);
+                renderer[0]->setBackgroundColor(config->bgColor);
+                renderer[0]->setCamera(camera);
+                renderer[0]->setSamples(config->samples);
+            }
         }
         /*
          * If we have a time series
