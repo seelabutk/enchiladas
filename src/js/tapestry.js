@@ -78,10 +78,7 @@
         $(this.element).css("width", this.settings.width.toString() + "px");
         $(this.element).css("height", this.settings.height.toString() + "px");
 
-        if (this.settings.n_tiles > 1)
-        {
-            this.setup_tiles();
-        }
+        this.setup_tiles();
 
         if ($(this.element).attr("data-timerange"))
         {
