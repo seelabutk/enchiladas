@@ -130,6 +130,7 @@
 
     Tapestry.prototype.setup_tiles = function()
     {
+        $(this.element).empty();
         var base = $("<div>")
             .attr("class", "tapestry-tile-base")
             .css({
@@ -174,6 +175,21 @@
         var upz = new_camera_up.elements[2];
 
         return { position: new_camera_position.elements, up: new_camera_up.elements };
+    }
+
+    Tapestry.prototype.tiling_off = function()
+    {
+        this.settings.n_tiles_backup = this.settings.n_tiles;
+        this.settings.n_tiles = 1;    
+        this.setup_tiles();
+        this.settings.tiling_status = "off";
+    }
+
+    Tapestry.prototype.tiling_on = function()
+    {
+        this.settings.n_tiles = this.settings.n_tiles_backup;   
+        this.setup_tiles();
+        this.settings.tiling_status = "on";
     }
 
     Tapestry.prototype.make_request = function(lowquality, tileid)
@@ -664,6 +680,7 @@
         height: 512,
         zoom: 512,
         n_tiles: 1,
+        tiling_status: "on",
         max_cache_length: 512, // client-side caching for preventing browser request cancellation
         enable_zoom: true,
         enable_rotation: true,

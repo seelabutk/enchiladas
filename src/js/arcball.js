@@ -88,8 +88,8 @@ ArcBall.prototype = {
 
     slerp: function(keyframe1, keyframe2, t)
     {
-        var quat1 = Matrix3fToQuat(keyframe1["quaternion"]);
-        var quat2 = Matrix3fToQuat(keyframe2["quaternion"]);
+        var quat1 = Matrix3fToQuat(keyframe1["rotation"]);
+        var quat2 = Matrix3fToQuat(keyframe2["rotation"]);
         var zoom1 = keyframe1["zoom"];
         var zoom2 = keyframe2["zoom"];
 
