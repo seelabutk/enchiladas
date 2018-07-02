@@ -1,5 +1,9 @@
 $(document).ready(function(){
-    $(".hyperimage").tapestry({});
+    $(".hyperimage").tapestry({
+        n_tiles: 16,
+        width: 1024,
+        height: 1024
+    });
 
     // Listen to slider events and change the 
     // isosurface threshold accordingly

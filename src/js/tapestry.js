@@ -78,6 +78,11 @@
         $(this.element).css("width", this.settings.width.toString() + "px");
         $(this.element).css("height", this.settings.height.toString() + "px");
 
+        if (this.settings.n_tiles > 1)
+        {
+            this.setup_tiles();
+        }
+
         if ($(this.element).attr("data-timerange"))
         {
             var range = $(this.element).attr("data-timerange").split("..");
@@ -126,6 +131,35 @@
         this.camera.zoomScale = this.camera.position.elements[2];
     }
 
+    Tapestry.prototype.setup_tiles = function()
+    {
+        var base = $("<div>")
+            .attr("class", "tapestry-tile-base")
+            .css({
+                "width": this.settings.width,
+                "height": this.settings.height,
+                "pointer-events": "none"
+            })
+            .appendTo(this.element);
+
+        var n_tiles = this.settings.n_tiles;
+        var n_cols = Math.sqrt(n_tiles);
+        var tile_width = this.settings.width / n_cols;
+
+        for (var i = 0; i < n_tiles; i++)
+        {
+            $("<img>")
+                .attr("class", "tapestry-tile-image")
+                .attr("id", "tapestry-tile-" + i.toString())
+                .css({
+                    "float": "left",
+                    "width": tile_width + "px",
+                    "height": tile_width + "px"
+                })
+                .appendTo(base);
+        }
+    }
+
     Tapestry.prototype.getCameraInfo = function()
     {
         var m = $M(this.camera.Transform);
@@ -145,16 +179,12 @@
         return { position: new_camera_position.elements, up: new_camera_up.elements };
     }
 
-    Tapestry.prototype.render = function(lowquality, remote_call, make_path_only)
+    Tapestry.prototype.make_request = function(lowquality, tileid)
     {
-        if (typeof remote_call === 'undefined')
+        var tiling = true;
+        if (typeof tileid == 'undefined')
         {
-            remote_call = false;
-        }
-
-        if (typeof make_path_only === 'undefined')
-        {
-            make_path_only = false;
+            tiling = false;
         }
 
         var m = $M(this.camera.Transform);
@@ -180,6 +210,12 @@
         var dataset = $(this.element).attr("data-dataset");
         
         var options = {};
+
+        if (tiling)
+        {
+            options["tiling"] = tileid.toString() + "-" + this.settings.n_tiles.toString();
+        }
+
         if ($(this.element).attr("data-colormap"))
         {
             options["colormap"] = $(this.element).attr("data-colormap");
@@ -222,8 +258,14 @@
             quality = this.settings.width;
         }
 
-        var host = "";
-        if (this.settings.host !== undefined)
+        var host;
+        if (this.settings.host.constructor === Array)
+        {
+            var random = Math.floor(Math.random() 
+                    * this.settings.host.length);
+            host = this.settings.host[random] + "/";
+        }
+        else
         {
             host = this.settings.host + "/";
         }
@@ -233,10 +275,54 @@
             + viewx + "/" + viewy + "/" + viewz + "/"
             + quality.toString() + "/" + options_str;
 
-        if (make_path_only)
+        return path;
+    }
+
+    Tapestry.prototype.render = function(imagesize, remote_call)
+    {
+        if (typeof remote_call === 'undefined')
         {
-            return path;
+            remote_call = false;
         }
+
+        var n_tiles = this.settings.n_tiles;
+        var n_cols = Math.sqrt(n_tiles);
+        var width = this.settings.width;
+
+        var requests = [];
+        for (var i = 0; i < n_tiles; i++)
+        {
+            var path = this.make_request(imagesize, i);
+            var img = new Image();
+            img.tileid = i.toString();
+            var self = this;
+            img.onload = function() {
+                var tile = $(self.element).find("#tapestry-tile-" + this.tileid).eq(0);
+                tile.attr("src", this.src);
+            }
+            img.src = path;
+        }
+
+        // Don't rotate linked views if this call is
+        // from one of them otherwise it'll be an infinite
+        // loop
+        if (!remote_call)
+        {
+            for (var i = 0; i < this.linked_objs.length; i++)
+            {
+                this.linked_objs[i].render(imagesize, true);
+            }
+        }
+    }
+
+    Tapestry.prototype.render_single = function(lowquality, remote_call)
+    {
+        if (typeof remote_call === 'undefined')
+        {
+            remote_call = false;
+        }
+
+        var path = this.make_request(lowquality);
 
         // Let's cache a bunch of the images so that requests
         // don't get cancelled by the browser. 
@@ -309,13 +395,13 @@
         this.timelog = {};
     }
 
-    Tapestry.prototype.rotate = function(mouse_x, mouse_y, lowquality)
+    Tapestry.prototype.rotate = function(mouse_x, mouse_y, imagesize)
     {
         if (this.is_drag)
         {
             this.is_drag = false;
             this.camera.move(mouse_x, mouse_y);
-            this.render(lowquality);
+            this.render(imagesize);
             this.is_drag = true;
         }
     }
@@ -323,7 +409,7 @@
     Tapestry.prototype.unlink_camera = function()
     { 
         this.setup_camera();
-        this.render(0);
+        this.render(this.get_low_resolution());
     }
     
     Tapestry.prototype.link = function(target)
@@ -342,7 +428,7 @@
             // Add ourself to that object too
             target.linked_objs.push(this);
 
-            target.render(0);
+            target.render(this.get_low_resolution());
         }
     }
     
@@ -379,7 +465,7 @@
             var current_position = Vector.create(m.multiply(this.camera.position).elements.slice(0, 3));
             var pos = Vector.create([parseInt(position[0]), parseInt(position[1]), parseInt(position[2])]);
             this.camera.rotateTo(pos);
-            this.render(0);
+            this.render(this.get_low_resolution());
             return this;
         }
         else if (operation == 'link')
@@ -420,7 +506,7 @@
             targets = targets.replace(/\(|\)| /g, "");
             targets = targets.split(",");
             $(this.element).attr("data-dataset", targets[0]);
-            this.render(0);
+            this.render(this.get_low_resolution());
         }
 
     }
@@ -443,6 +529,15 @@
             }, 20);
             step += 0.05;
         }
+    }
+
+    Tapestry.prototype.get_low_resolution = function()
+    {
+        var intended = this.settings.width / 8;
+        // let's keep the min and max at 256 for now
+        var MIN_LOW_RES_SIZE = 256;
+        var MAX_LOW_RES_SIZE = 256;
+        return Math.min(Math.max(intended, MIN_LOW_RES_SIZE), MAX_LOW_RES_SIZE);
     }
 
     Tapestry.prototype.setup_handlers = function()
@@ -469,7 +564,7 @@
             {
                 var mouse_x = event.clientX - self.element.getBoundingClientRect().left;
                 var mouse_y = event.clientY - self.element.getBoundingClientRect().top;
-                self.rotate(mouse_x, mouse_y, 1); // Render low quality version
+                self.rotate(mouse_x, mouse_y, self.get_low_resolution()); // Render low quality version
             }
         });
 
@@ -511,11 +606,11 @@
 
                 self.camera.zoomScale -= delta;
                 self.camera.position.elements[2] = self.camera.zoomScale;
-                self.render(1);
+                self.render(self.get_low_resolution());
 
                 clearTimeout($.data(self, 'timer'));
                 $.data(self, 'timer', setTimeout(function() {
-                    self.render(0);
+                    self.render(self.get_high_resolution());
                 }, 500));
             }
             return false;
@@ -544,7 +639,7 @@
             console.log("touchend");
             self.is_drag = false;
 
-            self.render(0);
+            self.render(this.get_low_resolution());
             return false;
         });
 
@@ -571,6 +666,7 @@
         width: 512,
         height: 512,
         zoom: 512,
+        n_tiles: 1,
         max_cache_length: 512, // client-side caching for preventing browser request cancellation
         enable_zoom: true,
         enable_rotation: true,

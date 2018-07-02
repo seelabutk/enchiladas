@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <stdio.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "pistache/http.h"
 #include "pistache/router.h"
@@ -70,7 +71,7 @@ void EnchiladaServer::setupRoutes()
     Routes::Get(router, "/css/:filename",
             Routes::bind(&EnchiladaServer::handleCSS, this));
     // serving renders
-    Routes::Get(router, "/image/:dataset/:x/:y/:z/:upx/:upy/:upz/:vx/:vy/:vz/:lowquality/:options?",
+    Routes::Get(router, "/image/:dataset/:x/:y/:z/:upx/:upy/:upz/:vx/:vy/:vz/:imagesize/:options?",
             Routes::bind(&EnchiladaServer::handleImage, this));
     // routing to plugins
     Routes::Get(router, "/extern/:plugin/:args?", 
@@ -157,7 +158,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     float view_y = 0;
     float view_z = 1;
 
-    int lowquality = 0;
+    int imagesize = 0;
     std::string dataset = "";
 
     if (request.hasParam(":dataset"))
@@ -177,12 +178,12 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         view_y = request.param(":vy").as<float>();
         view_z = request.param(":vz").as<float>();
 
-        lowquality = request.param(":lowquality").as<int>();
+        imagesize = request.param(":imagesize").as<int>();
 
         request_uri += std::to_string(camera_x) + "/" + std::to_string(camera_y) + "/" + std::to_string(camera_z) + "/" +
             std::to_string(up_x) + "/" + std::to_string(up_y) + "/" + std::to_string(up_z) + "/" + 
             std::to_string(view_x) + "/" + std::to_string(view_y) + "/" + std::to_string(view_z) + "/" + 
-            std::to_string(lowquality) + "/"; 
+            std::to_string(imagesize) + "/"; 
     }
 
     // Check if this dataset exists in the loaded datasets
@@ -197,7 +198,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     pbnj::Camera *camera = std::get<2>(volume_map[dataset]);
     pbnj::Renderer **renderer = std::get<3>(volume_map[dataset]);
     
-    std::vector<unsigned char> png;
+    std::vector<unsigned char> jpg;
 
     int renderer_index = 0; // Equal to a valid timestep
     bool onlysave = false;
@@ -208,6 +209,8 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     std::vector<float> isovalues; // In case isosurfacing is supported
     pbnj::Volume *temp_volume; // Either a normal volume or a timeseries one 
     bool has_timesteps = false;
+    int n_cols = 1;
+    bool do_tiling = false;
 
     // set a default volume based on the dataset type
     // it'll be either a timeseries volume from timestep 0
@@ -243,6 +246,30 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
 
         for (auto it = options.begin(); it != options.end(); it++)
         {
+            if (*it == "tiling")
+            {
+                it++;
+                std::string tile_str = *it;
+                const char *tile_char = tile_str.c_str();
+                std::vector<int> tile_values;
+
+                // get the tile index and number of tiles
+                // "tiling,3-16" -> tile index 3 of 16 tiles
+                do {
+                    const char *t_begin = tile_char;
+                    while(*tile_char != '-' && *tile_char)
+                        tile_char++;
+                    tile_values.push_back(std::stoi(std::string(t_begin, tile_char)));
+                } while(0 != *tile_char++);
+
+                // calculate the region of the image for this tile
+                // and tell the camera to only render that region
+                n_cols = (int) sqrtf(tile_values[1]);
+                std::vector<float> region;
+                this->calculateTileRegion(tile_values[0], tile_values[1], n_cols, region);
+                camera->setRegion(region[0], region[1], region[2], region[3]);
+            }
+
             if (*it == "timestep")
             {
                 it++;
@@ -339,16 +366,12 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         }
     }
 
-    if (lowquality == 1)
-    {
-        renderer[renderer_index]->cameraWidth = camera->imageWidth = 64;
-        renderer[renderer_index]->cameraHeight = camera->imageHeight = 64;
-    }
-    else
-    {
-        renderer[renderer_index]->cameraWidth = camera->imageWidth = std::min(config->imageWidth, lowquality);
-        renderer[renderer_index]->cameraHeight = camera->imageHeight = std::min(config->imageHeight, lowquality);
-    }
+
+    camera->setImageSize(imagesize/n_cols, imagesize/n_cols);
+    /* for capping the size of the render
+    camera->setImageSize(std::min(config->imageWidth, imagesize),
+            std::min(config->imageHeight, imagesize));
+    */
 
     camera->setPosition(camera_x, camera_y, camera_z);
     camera->setUpVector(up_x, up_y, up_z);
@@ -372,8 +395,8 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     }
     else
     {
-        renderer[renderer_index]->renderToPNGObject(png);
-        std::string png_data(png.begin(), png.end());
+        renderer[renderer_index]->renderToJPGObject(jpg, 100);
+        std::string jpg_data(jpg.begin(), jpg.end());
 
         /*
          * HTTP-based filter implementation
@@ -391,7 +414,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
             std::string filter = *it;
 
             auto request_builder = client.post("http://accona.eecs.utk.edu:8050/" + filter);
-            auto resp = request_builder.body(png_data).send();
+            auto resp = request_builder.body(jpg_data).send();
             std::cout<<"Request sent"<<std::endl;
             resp.then([&](Http::Response filter_response) {
                 auto mime = Http::Mime::MediaType::fromString("image/png");
@@ -415,11 +438,11 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
             std::string filter = *it;
             filter = this->app_dir + "/plugins/" + filter;
             std::string filtered_data;
-            png_data = exec_filter(filter.c_str(), request_uri, png_data);
+            jpg_data = exec_filter(filter.c_str(), request_uri, jpg_data);
         }
 
-        auto mime = Http::Mime::MediaType::fromString("image/png");
-        response.send(Http::Code::Ok, png_data, mime);
+        auto mime = Http::Mime::MediaType::fromString("image/jpg");
+        response.send(Http::Code::Ok, jpg_data, mime);
 
     }
 
@@ -444,6 +467,25 @@ void EnchiladaServer::handleAppData(const Rest::Request &request,
     auto filename = request.param(":filename").as<std::string>();
     filename = "/app/data/" + filename;
     serveFile(response, filename.c_str());
+}
+
+void EnchiladaServer::calculateTileRegion(int tile_index, int num_tiles,
+        int n_cols, std::vector<float> &region)
+{
+    int tile_x = tile_index % n_cols;
+    int tile_y = tile_index / n_cols;
+    //std::cerr << "tile " << tile_index << " of " << num_tiles << ", " << n_cols << " cols" << std::endl;
+    //std::cerr << "x,y " << tile_x << " " << tile_y << std::endl;
+    region.push_back( ((float) n_cols - tile_y) / n_cols );      // top
+    region.push_back( ((float) tile_x + 1) / n_cols );           // right
+    region.push_back( ((float) n_cols - tile_y - 1) / n_cols );  // bottom
+    region.push_back( ((float) tile_x) / n_cols );               // left
+    /*
+    std::cerr << "region " << region[0] << " "
+                           << region[1] << " "
+                           << region[2] << " "
+                           << region[3] << std::endl;
+    */
 }
 
 }
