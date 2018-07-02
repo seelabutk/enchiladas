@@ -281,7 +281,7 @@
         var requests = [];
         for (var i = 0; i < n_tiles; i++)
         {
-            var path = this.make_request(0, i);
+            var path = this.make_request(lowquality, i);
             var img = new Image();
             img.tileid = i.toString();
             var self = this;
@@ -518,6 +518,12 @@
         }
     }
 
+    Tapestry.prototype.get_low_resolution = function()
+    {
+        var intended = this.settings.width / 8;
+        return Math.min(Math.max(intended, 8), 256);
+    }
+
     Tapestry.prototype.setup_handlers = function()
     {
         var self = this;
@@ -542,7 +548,7 @@
             {
                 var mouse_x = event.clientX - self.element.getBoundingClientRect().left;
                 var mouse_y = event.clientY - self.element.getBoundingClientRect().top;
-                self.rotate(mouse_x, mouse_y, 1); // Render low quality version
+                self.rotate(mouse_x, mouse_y, self.get_low_resolution()); // Render low quality version
             }
         });
 
