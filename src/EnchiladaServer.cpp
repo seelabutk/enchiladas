@@ -228,6 +228,9 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         has_timesteps = true;
     }
 
+    // set the full region of the image as the default
+    camera->setRegion(1., 1., 0., 0.);
+
     // parse the request's extra options
     if (request.hasParam(":options"))
     {
