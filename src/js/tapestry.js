@@ -1,5 +1,13 @@
+/**
+ * The main tapestry module written in the jQuery module format
+ * @namespace Tapestry
+ */
 ;(function ($, window){
-
+    /**
+     * Appends the tapestry function to jQuery functions. 
+     * @param {object} options - All tapestry settings can 
+     * be overridden in the options dictionary.
+     */
     $.fn.tapestry = function(options)
     {
         // Make and store a tapestry per container
@@ -23,6 +31,11 @@
         // TODO:If the options is a string then expose the plugin's methods
     }
 
+    /**
+     * Creates a tapestry hyperimage
+     * @constructor
+     * @memberOf Tapestry
+     */
     function Tapestry(element, options)
     {
         this.element = element;
@@ -30,6 +43,10 @@
         this.init();
     }
 
+    /**
+     * Generates and returns a unique id for this hyperimage
+     * @deprecated
+     */
     function generate_uuid()
     {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -38,7 +55,10 @@
         });
     }
 
-    // At the moment, we just need to detect Edge
+    /**
+     * Detects the browser. Used for fixing smooth scrolling. 
+     * @static
+     */
     function detectBrowser()
     {
         var browser = "";
@@ -53,6 +73,9 @@
         return browser;
     }
 
+    /**
+     * The initialization function that makes a hyperimage ready
+     */
     Tapestry.prototype.init = function()
     {
         this.canceler = 0;
@@ -117,9 +140,13 @@
         this.camera.Quat = [0.0, 0.0, 0.0, 1.0];
     }
 
+    /**
+     * Sets up the camera with a specific position and up vector, defaults are used if the parameters are undefined
+     * @param {array} position - Four element array of floats representing the position [x, y, z, w]
+     * @param {array} up - Four element array representing the up vector [x, y, z, w]
+     */
     Tapestry.prototype.setup_camera = function(position, up)
     {
-        console.log(position);
         this.camera = new ArcBall();
         this.camera.up = (typeof up !== 'undefined' ? up : $V([0, 1, 0, 1.0]));
         this.camera.position = (typeof position !== 'undefined' ? position : $V([0, 0, this.settings.zoom, 1.0]));
@@ -128,6 +155,13 @@
         this.camera.zoomScale = this.camera.position.elements[2];
     }
 
+    /**
+     * Removes all tiles (if they exist) and sets up tiling
+     * in the hyperimage. It uses settings.n_tiles to determine
+     * the number of tiles needed. Does not call render at then, 
+     * therefore the hyperimage will be blank after this function
+     * until render is called. 
+     */
     Tapestry.prototype.setup_tiles = function()
     {
         $(this.element).empty();
@@ -158,6 +192,9 @@
         }
     }
 
+    /**
+     * Returns the position and up vector of the camera as arrays of floats
+     */
     Tapestry.prototype.getCameraInfo = function()
     {
         var m = $M(this.camera.Transform);
@@ -177,6 +214,10 @@
         return { position: new_camera_position.elements, up: new_camera_up.elements };
     }
 
+    /**
+     * Replaces the current tiling setup with a single tile, 
+     * and saves the previous "n_tiles" setting in settings.n_tiles_backup
+     */
     Tapestry.prototype.tiling_off = function()
     {
         this.settings.n_tiles_backup = this.settings.n_tiles;
@@ -185,6 +226,10 @@
         this.settings.tiling_status = "off";
     }
 
+    /**
+     * Turns tiling back on meaning that it replaces the current tiles
+     * with new tiles. The number of tiles is retrieved from settings.n_tiles_backup
+     */
     Tapestry.prototype.tiling_on = function()
     {
         this.settings.n_tiles = this.settings.n_tiles_backup;   
@@ -192,7 +237,16 @@
         this.settings.tiling_status = "on";
     }
 
-    Tapestry.prototype.make_request = function(lowquality, tileid)
+    /**
+     * Creates the path of a hyperimage request and returns the string
+     *
+     * @param {int} imagesize - The size of the image to be requested.
+     * If set to zero, then settings.width is used. 
+     *
+     * @param {int} tileid - The number of the tile to be requested. 
+     * If left undefined, the complete image is requested.
+     */
+    Tapestry.prototype.make_request = function(imagesize, tileid)
     {
         var tiling = true;
         if (typeof tileid == 'undefined')
@@ -265,8 +319,8 @@
         }
         options_str = options_str.substring(0, options_str.length - 1);
 
-        var quality = lowquality;
-        if (lowquality == 0)
+        var quality = imagesize;
+        if (imagesize == 0)
         {
             quality = this.settings.width;
         }
@@ -291,6 +345,14 @@
         return path;
     }
 
+    /**
+     * Sends render requests to the server and renders the hyperimage. 
+     * Internally calls {@link Tapestry#make_request}
+     * 
+     * @param {int} imagesize - The total image size for the render
+     * @param {bool} remote_call - determines if this is called remotely from 
+     * another hyperimage instance (used internally). Leave as undefined. 
+     */
     Tapestry.prototype.render = function(imagesize, remote_call)
     {
         if (typeof remote_call === 'undefined')
@@ -328,6 +390,10 @@
         }
     }
 
+    /**
+     * Sends a single render request and doesn't support tiling
+     * @deprecated
+     */
     Tapestry.prototype.render_single = function(lowquality, remote_call)
     {
         if (typeof remote_call === 'undefined')
@@ -369,6 +435,13 @@
         }
     }
 
+    /**
+     * Console logs statistics about user interactions. 
+     * If a log server is given, it sends the results with a 
+     * post request
+     *
+     * @param {string} host - The path to the log server
+     */
     Tapestry.prototype.getInteractionStats = function(host)
     {
         var low_quality_sum = 0;
