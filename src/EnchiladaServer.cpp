@@ -198,19 +198,20 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     pbnj::Camera *camera = std::get<2>(volume_map[dataset]);
     pbnj::Renderer **renderer = std::get<3>(volume_map[dataset]);
     
-    std::vector<unsigned char> jpg;
+    std::vector<unsigned char> image_data;
 
     int renderer_index = 0; // Equal to a valid timestep
     bool onlysave = false;
     bool do_isosurface = false;
+    std::string format = "jpg";
     std::string filename = "";
     std::string save_filename;
     std::vector<std::string> filters; // If any image filters are specified, we'll put them here
     std::vector<float> isovalues; // In case isosurfacing is supported
     pbnj::Volume *temp_volume; // Either a normal volume or a timeseries one 
     bool has_timesteps = false;
-    int n_cols = 1;
     bool do_tiling = false;
+    int n_cols = 1;
 
     // set a default volume based on the dataset type
     // it'll be either a timeseries volume from timestep 0
@@ -268,6 +269,12 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
                 std::vector<float> region;
                 this->calculateTileRegion(tile_values[0], tile_values[1], n_cols, region);
                 camera->setRegion(region[0], region[1], region[2], region[3]);
+            }
+
+            if (*it == "format")
+            {
+                it++;
+                format = *it;
             }
 
             if (*it == "timestep")
@@ -390,45 +397,21 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     {
         // no filters are supported for the onlysave option at the moment
         std::cout<<"Saving to "<<save_filename<<std::endl;
-        renderer[renderer_index]->renderImage("/app/data/" + save_filename + ".png");
+        renderer[renderer_index]->renderImage("/app/data/" + save_filename + "." + format);
         response.send(Http::Code::Ok, "saved");
     }
     else
     {
-        renderer[renderer_index]->renderToJPGObject(jpg, 100);
-        std::string jpg_data(jpg.begin(), jpg.end());
-
-        /*
-         * HTTP-based filter implementation
-         *
-        std::vector<Async::Promise<Http::Response>> responses;
-		Http::Client client;
-		auto options = Http::Client::options()
-			.threads(10)
-			.maxConnectionsPerHost(20);
-		client.init(options);
-
-        // apply the filters if any 
-        for (auto it = filters.begin(); it != filters.end(); it++)
+        std::string encoded_image_data;
+        if (format == "jpg")
         {
-            std::string filter = *it;
-
-            auto request_builder = client.post("http://accona.eecs.utk.edu:8050/" + filter);
-            auto resp = request_builder.body(jpg_data).send();
-            std::cout<<"Request sent"<<std::endl;
-            resp.then([&](Http::Response filter_response) {
-                auto mime = Http::Mime::MediaType::fromString("image/png");
-                response.send(Http::Code::Ok, filter_response.body(), mime);
-                std::cout<<"Got response"<<std::endl;
-            }, Async::IgnoreException);
-
-			responses.push_back(std::move(resp));
+            renderer[renderer_index]->renderToJPGObject(image_data, 100);
         }
-        auto sync = Async::whenAll(responses.begin(), responses.end());
-        Async::Barrier<std::vector<Http::Response>> barrier(sync);
-        barrier.wait_for(std::chrono::seconds(5));
-        client.shutdown();
-        */
+        else if (format == "png")
+        {
+            renderer[renderer_index]->renderToPNGObject(image_data);
+        }
+        encoded_image_data = std::string(image_data.begin(), image_data.end());
 
         // Pad the request_uri
         request_uri.insert(0, 2000 - request_uri.size(), ' ');
@@ -438,14 +421,12 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
             std::string filter = *it;
             filter = this->app_dir + "/plugins/" + filter;
             std::string filtered_data;
-            jpg_data = exec_filter(filter.c_str(), request_uri, jpg_data);
+            encoded_image_data = exec_filter(filter.c_str(), request_uri, encoded_image_data);
         }
 
-        auto mime = Http::Mime::MediaType::fromString("image/jpg");
-        response.send(Http::Code::Ok, jpg_data, mime);
-
+        auto mime = Http::Mime::MediaType::fromString("image/" + format);
+        response.send(Http::Code::Ok, encoded_image_data, mime);
     }
-
 }
 
 void EnchiladaServer::handleConfiguration(const Rest::Request &request, 
