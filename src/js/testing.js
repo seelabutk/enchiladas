@@ -139,7 +139,9 @@ $(document).ready(function(){
     {
         setTimeout(function(){
             var random = Math.floor(Math.random() * $(".hyperimage").length);
-            tester = new Tester({element: $(".hyperimage").get(random), 
+            var element = $(".hyperimage").get(random);
+            $(element).data("tapestry").timelog = {};
+            tester = new Tester({element: element, 
                 log_server: getUrlParameter("log_server")});
             tester.test(getUrlParameter("test"));
         }, 2000);
