@@ -369,10 +369,20 @@
         {
             var path = this.make_request(imagesize, i);
             var img = new Image();
-            img.tileid = i.toString();
             var self = this;
-            img.onload = function() {
-                var tile = $(self.element).find("#tapestry-tile-" + this.tileid).eq(0);
+            img.tileid = i.toString();
+
+            // store timings in the log
+            this.timelog[path] = [Date.now(), imagesize, false, 0];
+
+            img.onload = function(ev) {
+                var image_path = ev.target.src.slice(
+                        ev.target.src.indexOf("/image/"));
+                self.timelog[image_path][3] = Date.now();
+                self.timelog[image_path][2] = true;
+
+                var tile = $(self.element)
+                    .find("#tapestry-tile-" + this.tileid).eq(0);
                 tile.attr("src", this.src);
             }
             img.src = path;
@@ -436,13 +446,9 @@
     }
 
     /**
-     * Console logs statistics about user interactions. 
-     * If a log server is given, it sends the results with a 
-     * post request
-     *
-     * @param {string} host - The path to the log server
+     * returns logs statistics about user interactions. 
      */
-    Tapestry.prototype.getInteractionStats = function(host)
+    Tapestry.prototype.getInteractionStats = function()
     {
         var low_quality_sum = 0;
         var low_quality_n = 0;
@@ -461,24 +467,23 @@
                 high_quality_sum += this.timelog[i][3] - this.timelog[i][0];
             }
         }
+
+        // print the information to console
         console.log("Average low quality time of response: ", low_quality_sum / low_quality_n);
         console.log("Average high quality time of response: ", high_quality_sum / high_quality_n);
         console.log("Number of answered requests: ", high_quality_n + low_quality_n);
         console.log("Number of requests sent: ", Object.keys(this.timelog).length);
 
         var self = this;
-        if (typeof host !== 'undefined')
-        {
-            // Send to log server 
-            $.ajax({
-                url: host,
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({'load': self.timelog}),
-                success: function(){}
-            });
+        var data = {
+            "logs": self.timelog,
+            "avg_low_quality_response_time": low_quality_sum / low_quality_n,
+            "avg_high_quality_response_time": high_quality_sum / high_quality_n,
+            "n_answered_requests": high_quality_n + low_quality_n,
+            "n_sent_requests": Object.keys(self.timelog).length
         }
         this.timelog = {};
+        return data;
     }
 
     Tapestry.prototype.rotate = function(mouse_x, mouse_y, imagesize)

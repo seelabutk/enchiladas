@@ -93,12 +93,6 @@ Tester = function(configs)
             })
             .positionSelector(function(){
                 var offset = self.element.offset();
-                /*newPos = [prevX + ((Math.random() * 8) % self.element.outerWidth() - 4.0), 
-                    prevY + ((Math.random() * 8) % self.element.outerHeight() - 4.0)];
-                console.log(newPos);
-                prevX = newPos[0];
-                prevY = newPos[1];*/
-
                 path_index += 0.01;
                 return [spline_path(path_index)[0] + offset.left, spline_path(path_index)[1] + offset.top];
             })
@@ -111,7 +105,12 @@ Tester = function(configs)
             .delay(8)
         );
         horde.after(function(){
-            $(self.element).data("tapestry").getInteractionStats(self.log_server);
+            var stats = JSON.stringify(
+                $(self.element).data("tapestry").getInteractionStats());
+            $("<div>")
+                .attr("id", "done")
+                .text(stats)
+                .appendTo("body");
         });
 
         horde.unleash({nb: n_gremlins});
@@ -120,7 +119,6 @@ Tester = function(configs)
 
 getUrlParameter = null;
 $(document).ready(function(){
-    
   	getUrlParameter = function(sParam) {
         var sPageURL = decodeURIComponent(window.location.search.substring(1)),
             sURLVariables = sPageURL.split('&'),
@@ -137,16 +135,14 @@ $(document).ready(function(){
     }; 
 
 	// Set up testing if needed
-	if (getUrlParameter("test") && getUrlParameter("log_server"))
+	if (getUrlParameter("test"))
     {
         setTimeout(function(){
             var random = Math.floor(Math.random() * $(".hyperimage").length);
-            /*$(".tapestry").eq(random).each(function(){
-                tester = new Tester({element: this});
-                tester.test();
-            });*/
-            tester = new Tester({element: $(".hyperimage").get(random), log_server: getUrlParameter("log_server")});
+            tester = new Tester({element: $(".hyperimage").get(random), 
+                log_server: getUrlParameter("log_server")});
             tester.test(getUrlParameter("test"));
         }, 2000);
     }
 });
+
