@@ -146,9 +146,9 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
 {
     std::string request_uri = "/image/";
 
-    int camera_x = 0;
-    int camera_y = 0;
-    int camera_z = 0;
+    float camera_x = 0;
+    float camera_y = 0;
+    float camera_z = 0;
 
     float up_x = 0;
     float up_y = 1;
@@ -166,9 +166,9 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
         dataset = request.param(":dataset").as<std::string>();
         request_uri += dataset + "/";
 
-        camera_x = request.param(":x").as<std::int32_t>(); 
-        camera_y = request.param(":y").as<std::int32_t>(); 
-        camera_z = request.param(":z").as<std::int32_t>(); 
+        camera_x = request.param(":x").as<float>();
+        camera_y = request.param(":y").as<float>();
+        camera_z = request.param(":z").as<float>();
 
         up_x = request.param(":upx").as<float>();
         up_y = request.param(":upy").as<float>();
