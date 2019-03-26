@@ -448,6 +448,9 @@ void EnchiladaServer::handleConfiguration(const Rest::Request &request,
 void EnchiladaServer::handleAppData(const Rest::Request &request, 
         Pistache::Http::ResponseWriter response)
 {
+    auto mime = Http::Mime::MediaType::fromString("video/mp4");
+    response.headers()
+        .add<Header::ContentType>(mime);
     auto filename = request.param(":filename").as<std::string>();
     filename = "/app/data/" + filename;
     serveFile(response, filename.c_str());
