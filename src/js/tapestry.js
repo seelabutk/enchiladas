@@ -112,8 +112,17 @@
             original_position = $V(temp);
         }
 
+        var original_up = $V([0, 1, 0, 1]);
+        if ($(this.element).attr("data-up"))
+        {
+            var temp = $(this.element).attr("data-up").split(",");
+            temp = temp.map(function(x) { return parseFloat(x); });
+            temp.push(1.0);
+            original_up = $V(temp);
+        }
+
         // First render
-        this.setup_camera(original_position);
+        this.setup_camera(original_position, original_up);
         this.setup_handlers();
         $(this.element).mousedown();
         $(this.element).mouseup();

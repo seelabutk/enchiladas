@@ -23,6 +23,7 @@
 #include "Renderer.h"
 #include "TransferFunction.h"
 #include "TimeSeries.h"
+#include "Subject.h"
 
 namespace ench {
 
@@ -207,7 +208,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     std::string save_filename;
     std::vector<std::string> filters; // If any image filters are specified, we'll put them here
     std::vector<float> isovalues; // In case isosurfacing is supported
-    pbnj::Volume *temp_volume; // Either a normal volume or a timeseries one 
+    pbnj::Subject *temp_subject; // Either a timeseries volume or some other subject type
     bool has_timesteps = false;
     int n_cols = 1;
     bool do_tiling = false;
@@ -219,11 +220,27 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
     if (single_multi == pbnj::CONFSTATE::SINGLE_NOVAR 
             || single_multi == pbnj::CONFSTATE::SINGLE_VAR)
     {
-        temp_volume = udataset.volume; //by default
+        pbnj::CONFTYPE subjectType = config->getConfigType(config->dataFilename);
+        if (subjectType == pbnj::CONFTYPE::PBNJ_VOLUME)
+        {
+            temp_subject = udataset.volume;
+        }
+        else if (subjectType == pbnj::CONFTYPE::PBNJ_STREAMLINES)
+        {
+            temp_subject = udataset.streamlines;
+        }
+        else if (subjectType == pbnj::CONFTYPE::PBNJ_PARTICLES)
+        {
+            temp_subject = udataset.particles;
+        }
+        else
+        {
+            std::cerr << "Don't know what to do with this yet!" << std::endl;
+        }
     }
     else
     {
-        temp_volume = udataset.timeseries->getVolume(0); // by default
+        temp_subject = udataset.timeseries->getVolume(0); // by default
         has_timesteps = true;
     }
 
@@ -278,7 +295,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
                         timestep < udataset.timeseries->getLength())
                 {
                     renderer_index = timestep;
-                    temp_volume = udataset.timeseries->getVolume(renderer_index);
+                    temp_subject = udataset.timeseries->getVolume(renderer_index);
                 }
                 else
                 {
@@ -340,7 +357,7 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
                 it++;
                 filename = *it;
                 renderer_index = udataset.timeseries->getVolumeIndex(filename);
-                temp_volume = udataset.timeseries->getVolume(renderer_index);
+                temp_subject = udataset.timeseries->getVolume(renderer_index);
                 if (renderer_index == -1)
                 {
                     response.send(Http::Code::Not_Found, "Image does not exist");
@@ -379,11 +396,11 @@ void EnchiladaServer::handleImage(const Rest::Request &request,
 
     if (do_isosurface)
     {
-        renderer[renderer_index]->setIsosurface(temp_volume, isovalues);
+        renderer[renderer_index]->setIsosurface((pbnj::Volume *)temp_subject, isovalues);
     }
     else
     {
-        renderer[renderer_index]->setVolume(temp_volume);
+        renderer[renderer_index]->addSubject(temp_subject);
     }
 
     if (onlysave)
@@ -474,18 +491,10 @@ void EnchiladaServer::calculateTileRegion(int tile_index, int num_tiles,
 {
     int tile_x = tile_index % n_cols;
     int tile_y = tile_index / n_cols;
-    //std::cerr << "tile " << tile_index << " of " << num_tiles << ", " << n_cols << " cols" << std::endl;
-    //std::cerr << "x,y " << tile_x << " " << tile_y << std::endl;
     region.push_back( ((float) n_cols - tile_y) / n_cols );      // top
     region.push_back( ((float) tile_x + 1) / n_cols );           // right
     region.push_back( ((float) n_cols - tile_y - 1) / n_cols );  // bottom
     region.push_back( ((float) tile_x) / n_cols );               // left
-    /*
-    std::cerr << "region " << region[0] << " "
-                           << region[1] << " "
-                           << region[2] << " "
-                           << region[3] << std::endl;
-    */
 }
 
 }

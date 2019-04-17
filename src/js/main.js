@@ -1,6 +1,6 @@
 $(document).ready(function(){
     $(".hyperimage").tapestry({
-        n_tiles: 16,
+        n_tiles: 4,
         width: 1024,
         height: 1024
     });

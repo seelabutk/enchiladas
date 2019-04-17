@@ -32,22 +32,45 @@ namespace ench {
         if (single_multi == pbnj::CONFSTATE::SINGLE_NOVAR 
                 || single_multi == pbnj::CONFSTATE::SINGLE_VAR)
         {
-            dataset.volume = new pbnj::Volume(
-                    config->dataFilename, 
-                    config->dataVariable, 
-                    config->dataXDim, 
-                    config->dataYDim, 
-                    config->dataZDim, true);
-
-            dataset.volume->setColorMap(config->colorMap);
-            dataset.volume->setOpacityMap(config->opacityMap);
-            dataset.volume->attenuateOpacity(config->opacityAttenuation);
             renderer = new pbnj::Renderer*[1];
             renderer[0] = new pbnj::Renderer();
-            renderer[0]->setVolume(dataset.volume);
             renderer[0]->setBackgroundColor(config->bgColor);
             renderer[0]->setCamera(camera);
             renderer[0]->setSamples(config->samples);
+
+            pbnj::CONFTYPE subjectType = config->getConfigType(config->dataFilename);
+            if (subjectType == pbnj::CONFTYPE::PBNJ_VOLUME)
+            {
+                dataset.volume = new pbnj::Volume(
+                        config->dataFilename, 
+                        config->dataVariable, 
+                        config->dataXDim, 
+                        config->dataYDim, 
+                        config->dataZDim, true);
+
+                dataset.volume->setColorMap(config->colorMap);
+                dataset.volume->setOpacityMap(config->opacityMap);
+                dataset.volume->attenuateOpacity(config->opacityAttenuation);
+                renderer[0]->addSubject(dataset.volume);
+            }
+            else if (subjectType == pbnj::CONFTYPE::PBNJ_STREAMLINES)
+            {
+                camera->setUpVector(config->cameraUpX, config->cameraUpY, config->cameraUpZ);
+                camera->centerView();
+                dataset.streamlines = new pbnj::Streamlines(config->dataFilename, config->streamlinesRadius);
+                renderer[0]->addSubject(dataset.streamlines);
+            }
+            else if (subjectType == pbnj::CONFTYPE::PBNJ_PARTICLES)
+            {
+                camera->setView(config->cameraViewX, config->cameraViewY, config->cameraViewZ);
+                camera->setUpVector(config->cameraUpX, config->cameraUpY, config->cameraUpZ);
+                dataset.particles = new pbnj::Particles(config->dataFilename, true, true, config->particleRadius);
+                renderer[0]->addSubject(dataset.particles);
+            }
+            else
+            {
+                std::cerr << "Don't know how to do this type yet!" << std::endl;
+            }
         }
         /*
          * If we have a time series
@@ -71,7 +94,7 @@ namespace ench {
             for (int i = 0; i < dataset.timeseries->getLength(); i++)
             {
                 renderer[i] = new pbnj::Renderer();
-                renderer[i]->setVolume(dataset.timeseries->getVolume(i));
+                renderer[i]->addSubject(dataset.timeseries->getVolume(i));
                 renderer[i]->setBackgroundColor(config->bgColor);
                 renderer[i]->setCamera(camera);
                 renderer[i]->setSamples(config->samples);
